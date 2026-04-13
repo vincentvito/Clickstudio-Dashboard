@@ -9,7 +9,16 @@ import { KanbanBoard } from "@/components/dashboard/kanban-board"
 import { DailyLog } from "@/components/dashboard/daily-log"
 import { ProjectFormDialog } from "@/components/dashboard/project-form-dialog"
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog"
-import { useStore } from "@/lib/store"
+import {
+  useProject,
+  updateProject,
+  deleteProject,
+  createTask,
+  updateTask,
+  deleteTask,
+  moveTask,
+  createLog,
+} from "@/lib/store"
 import { TASK_SECTIONS } from "@/lib/constants"
 import type { ProjectState, TaskSection } from "@/lib/types"
 import { Pencil, Trash2, ExternalLink } from "lucide-react"
@@ -18,23 +27,19 @@ import Link from "next/link"
 export default function ProjectPage() {
   const params = useParams<{ projectId: string }>()
   const router = useRouter()
-  const {
-    data,
-    updateProject,
-    deleteProject,
-    addTask,
-    updateTask,
-    deleteTask,
-    moveTask,
-    addLog,
-  } = useStore()
+
+  const { project, tasks, logs, isLoading } = useProject(params.projectId)
 
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
-  const project = data.projects.find((p) => p.id === params.projectId)
-  const tasks = data.tasks.filter((t) => t.projectId === params.projectId)
-  const logs = data.logs.filter((l) => l.projectId === params.projectId)
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <span className="text-sm text-muted-foreground">Loading...</span>
+      </div>
+    )
+  }
 
   if (!project) {
     return (
@@ -49,27 +54,38 @@ export default function ProjectPage() {
 
   const links = project.artifactLinks.split("\n").filter((l) => l.trim())
 
-  function handleEdit(formData: {
+  async function handleEdit(formData: {
     title: string
     brainDump: string
     artifactLinks: string
     state: ProjectState
   }) {
-    updateProject(project!.id, formData)
+    await updateProject(project!.id, formData)
   }
 
-  function handleDelete() {
-    deleteProject(project!.id)
+  async function handleDelete() {
+    await deleteProject(project!.id)
     router.push("/dashboard")
   }
 
-  function handleAddTask(section: TaskSection, columnId: string, title: string) {
-    addTask({
-      projectId: project!.id,
-      section,
-      title,
-      columnId,
-    })
+  async function handleAddTask(section: TaskSection, columnId: string, title: string) {
+    await createTask(project!.id, { title, columnId, section })
+  }
+
+  async function handleUpdateTask(id: string, updates: Partial<{ title: string; columnId: string }>) {
+    await updateTask(id, updates)
+  }
+
+  async function handleDeleteTask(id: string) {
+    await deleteTask(id)
+  }
+
+  async function handleMoveTask(id: string, columnId: string) {
+    await moveTask(id, columnId)
+  }
+
+  async function handleAddLog(text: string) {
+    await createLog(project!.id, text)
   }
 
   return (
@@ -109,7 +125,7 @@ export default function ProjectPage() {
         </div>
       </div>
 
-      {/* Brain dump + links (only if content exists) */}
+      {/* Brain dump + links */}
       {(project.brainDump || links.length > 0) && (
         <div className="border-b border-border/50 px-4 py-3 sm:px-6">
           {project.brainDump && (
@@ -163,15 +179,15 @@ export default function ProjectPage() {
               tasks={tasks}
               section={section}
               onAddTask={handleAddTask}
-              onUpdateTask={updateTask}
-              onDeleteTask={deleteTask}
-              onMoveTask={moveTask}
+              onUpdateTask={handleUpdateTask}
+              onDeleteTask={handleDeleteTask}
+              onMoveTask={handleMoveTask}
             />
           ))}
         </TabsContent>
 
         <TabsContent value="log" className="flex-1 overflow-auto p-4 sm:p-6">
-          <DailyLog logs={logs} onAdd={(text) => addLog(project.id, text)} />
+          <DailyLog logs={logs} onAdd={handleAddLog} />
         </TabsContent>
       </Tabs>
 

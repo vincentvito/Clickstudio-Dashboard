@@ -18,18 +18,19 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "./theme-toggle"
-import { useStore } from "@/lib/store"
+import { useProjects } from "@/lib/store"
 import { PROJECT_STATE_CONFIG } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 import { LayoutDashboard, Plus } from "lucide-react"
 import { BrandMark } from "@/components/brand-mark"
+import { APP_VERSION } from "@/lib/changelog"
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   onNewProject: () => void
 }
 
 export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
-  const { data } = useStore()
+  const { projects, tasks } = useProjects()
   const pathname = usePathname()
 
   return (
@@ -92,15 +93,15 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
           <SidebarGroupLabel>Projects</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {data.projects.length === 0 && (
+              {projects.length === 0 && (
                 <p className="px-2 py-3 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
                   No projects yet
                 </p>
               )}
-              {data.projects.map((project) => {
+              {projects.map((project) => {
                 const isActive = pathname === `/dashboard/${project.id}`
                 const stateConfig = PROJECT_STATE_CONFIG[project.state]
-                const taskCount = data.tasks.filter(
+                const taskCount = tasks.filter(
                   (t) => t.projectId === project.id,
                 ).length
 
@@ -136,6 +137,12 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
         <SidebarMenu>
           <SidebarMenuItem>
             <div className="flex items-center justify-between px-2 group-data-[collapsible=icon]:justify-center">
+              <Link
+                href="/changelog"
+                className="text-[11px] text-muted-foreground transition-colors hover:text-foreground group-data-[collapsible=icon]:hidden"
+              >
+                v{APP_VERSION}
+              </Link>
               <ThemeToggle />
             </div>
           </SidebarMenuItem>

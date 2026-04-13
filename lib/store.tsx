@@ -1,189 +1,122 @@
 "use client"
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  type ReactNode,
-} from "react"
-import type { AppData, Project, Task, LogEntry } from "./types"
+import useSWR, { mutate } from "swr"
+import type { Project, Task, LogEntry } from "./types"
 
-const STORAGE_KEY = "clickstudio_v1"
+const fetcher = (url: string) =>
+  fetch(url).then((res) => {
+    if (!res.ok) throw new Error(`${res.status}`)
+    return res.json()
+  })
 
-const defaultData: AppData = { projects: [], tasks: [], logs: [] }
+// ─── Projects list ──────────────────────────────────────
 
-function loadData(): AppData {
-  if (typeof window === "undefined") return defaultData
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return defaultData
-    const parsed = JSON.parse(raw)
-    return {
-      projects: parsed.projects ?? [],
-      tasks: (parsed.tasks ?? []).map((t: Task & { status?: string }) => ({
-        ...t,
-        columnId: t.columnId ?? t.status ?? "todo",
-      })),
-      logs: parsed.logs ?? [],
-    }
-  } catch {
-    return defaultData
+type ProjectWithRelations = Project & {
+  tasks: Task[]
+  logs: LogEntry[]
+}
+
+export function useProjects() {
+  const { data, error, isLoading } = useSWR<ProjectWithRelations[]>(
+    "/api/projects",
+    fetcher,
+  )
+
+  const allTasks = data?.flatMap((p) => p.tasks) ?? []
+  const allLogs = data?.flatMap((p) => p.logs) ?? []
+
+  return {
+    projects: data ?? [],
+    tasks: allTasks,
+    logs: allLogs,
+    isLoading,
+    error,
   }
 }
 
-function saveData(data: AppData) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-  } catch {
-    // localStorage full or unavailable
+// ─── Single project ─────────────────────────────────────
+
+export function useProject(projectId: string) {
+  const { data, error, isLoading } = useSWR<ProjectWithRelations>(
+    `/api/projects/${projectId}`,
+    fetcher,
+  )
+
+  return {
+    project: data ?? null,
+    tasks: data?.tasks ?? [],
+    logs: data?.logs ?? [],
+    isLoading,
+    error,
   }
 }
 
-export function uid(): string {
-  return crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36)
+// ─── Mutations ──────────────────────────────────────────
+
+async function api(url: string, method: string, body?: unknown) {
+  const res = await fetch(url, {
+    method,
+    headers: body ? { "Content-Type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Request failed" }))
+    throw new Error(err.error ?? "Request failed")
+  }
+  return res.json()
 }
 
-interface StoreContextValue {
-  data: AppData
-  ready: boolean
-  addProject: (project: Omit<Project, "id" | "createdAt">) => Project
-  updateProject: (id: string, updates: Partial<Project>) => void
-  deleteProject: (id: string) => void
-  addTask: (task: Omit<Task, "id">) => void
-  updateTask: (id: string, updates: Partial<Task>) => void
-  deleteTask: (id: string) => void
-  moveTask: (id: string, columnId: string) => void
-  addLog: (projectId: string, text: string) => void
+function revalidate() {
+  mutate((key: string) => typeof key === "string" && key.startsWith("/api/"), undefined, { revalidate: true })
 }
 
-const StoreContext = createContext<StoreContextValue | null>(null)
-
-export function StoreProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<AppData>(defaultData)
-  const [ready, setReady] = useState(false)
-  const dataRef = useRef(data)
-  dataRef.current = data
-
-  useEffect(() => {
-    setData(loadData())
-    setReady(true)
-  }, [])
-
-  const persist = useCallback((updater: (prev: AppData) => AppData) => {
-    setData((prev) => {
-      const next = updater(prev)
-      saveData(next)
-      return next
-    })
-  }, [])
-
-  const addProject = useCallback(
-    (input: Omit<Project, "id" | "createdAt">) => {
-      const project: Project = {
-        ...input,
-        id: uid(),
-        createdAt: new Date().toISOString(),
-      }
-      persist((prev) => ({ ...prev, projects: [...prev.projects, project] }))
-      return project
-    },
-    [persist],
-  )
-
-  const updateProject = useCallback(
-    (id: string, updates: Partial<Project>) => {
-      persist((prev) => ({
-        ...prev,
-        projects: prev.projects.map((p) => (p.id === id ? { ...p, ...updates } : p)),
-      }))
-    },
-    [persist],
-  )
-
-  const deleteProject = useCallback(
-    (id: string) => {
-      persist((prev) => ({
-        projects: prev.projects.filter((p) => p.id !== id),
-        tasks: prev.tasks.filter((t) => t.projectId !== id),
-        logs: prev.logs.filter((l) => l.projectId !== id),
-      }))
-    },
-    [persist],
-  )
-
-  const addTask = useCallback(
-    (input: Omit<Task, "id">) => {
-      const task: Task = { ...input, id: uid() }
-      persist((prev) => ({ ...prev, tasks: [...prev.tasks, task] }))
-    },
-    [persist],
-  )
-
-  const updateTask = useCallback(
-    (id: string, updates: Partial<Task>) => {
-      persist((prev) => ({
-        ...prev,
-        tasks: prev.tasks.map((t) => (t.id === id ? { ...t, ...updates } : t)),
-      }))
-    },
-    [persist],
-  )
-
-  const deleteTask = useCallback(
-    (id: string) => {
-      persist((prev) => ({ ...prev, tasks: prev.tasks.filter((t) => t.id !== id) }))
-    },
-    [persist],
-  )
-
-  const moveTask = useCallback(
-    (id: string, columnId: string) => {
-      persist((prev) => ({
-        ...prev,
-        tasks: prev.tasks.map((t) => (t.id === id ? { ...t, columnId } : t)),
-      }))
-    },
-    [persist],
-  )
-
-  const addLog = useCallback(
-    (projectId: string, text: string) => {
-      const entry: LogEntry = {
-        id: uid(),
-        projectId,
-        text,
-        createdAt: new Date().toISOString(),
-      }
-      persist((prev) => ({ ...prev, logs: [...prev.logs, entry] }))
-    },
-    [persist],
-  )
-
-  return (
-    <StoreContext.Provider
-      value={{
-        data,
-        ready,
-        addProject,
-        updateProject,
-        deleteProject,
-        addTask,
-        updateTask,
-        deleteTask,
-        moveTask,
-        addLog,
-      }}
-    >
-      {children}
-    </StoreContext.Provider>
-  )
+export async function createProject(input: {
+  title: string
+  brainDump: string
+  artifactLinks: string
+  state: string
+}): Promise<Project> {
+  const project = await api("/api/projects", "POST", input)
+  revalidate()
+  return project
 }
 
-export function useStore() {
-  const ctx = useContext(StoreContext)
-  if (!ctx) throw new Error("useStore must be used within StoreProvider")
-  return ctx
+export async function updateProject(id: string, updates: Partial<Project>) {
+  await api(`/api/projects/${id}`, "PATCH", updates)
+  revalidate()
+}
+
+export async function deleteProject(id: string) {
+  await api(`/api/projects/${id}`, "DELETE")
+  revalidate()
+}
+
+export async function createTask(
+  projectId: string,
+  input: { title: string; columnId: string; section: string },
+): Promise<Task> {
+  const task = await api(`/api/projects/${projectId}/tasks`, "POST", input)
+  revalidate()
+  return task
+}
+
+export async function updateTask(id: string, updates: Partial<Task>) {
+  await api(`/api/tasks/${id}`, "PATCH", updates)
+  revalidate()
+}
+
+export async function deleteTask(id: string) {
+  await api(`/api/tasks/${id}`, "DELETE")
+  revalidate()
+}
+
+export async function moveTask(id: string, columnId: string) {
+  await api(`/api/tasks/${id}`, "PATCH", { columnId })
+  revalidate()
+}
+
+export async function createLog(projectId: string, text: string): Promise<LogEntry> {
+  const log = await api(`/api/projects/${projectId}/logs`, "POST", { text })
+  revalidate()
+  return log
 }

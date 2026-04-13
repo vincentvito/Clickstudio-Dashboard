@@ -1,136 +1,120 @@
-# Next.js Starter Template
+# Clickstudio Control Center
 
-A production-ready Next.js starter template with authentication, database, and internationalization pre-configured.
+A project management dashboard for tracking projects, tasks, and daily logs. Built with a modern stack and designed with a clean, Linear-inspired aesthetic.
 
 ## Tech Stack
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| [Next.js](https://nextjs.org) | 16.1.6 | React framework with App Router |
-| [React](https://react.dev) | 19.2.3 | UI library |
-| [TypeScript](https://www.typescriptlang.org) | 5.x | Type safety |
-| [Tailwind CSS](https://tailwindcss.com) | 4.x | Styling |
-| [Prisma](https://www.prisma.io) | 7.3.0 | Database ORM |
-| [Better Auth](https://www.better-auth.com) | 1.4.18 | Authentication |
-| [next-intl](https://next-intl.dev) | 4.8.1 | Internationalization |
-| [shadcn/ui](https://ui.shadcn.com) | - | UI components (Radix UI based) |
-| [Lucide React](https://lucide.dev) | 0.563.0 | Icons |
+| Technology | Purpose |
+|------------|---------|
+| [Next.js 16](https://nextjs.org) | React framework with App Router |
+| [React 19](https://react.dev) | UI library |
+| [TypeScript](https://www.typescriptlang.org) | Type safety |
+| [Tailwind CSS v4](https://tailwindcss.com) | Styling |
+| [shadcn/ui](https://ui.shadcn.com) | UI components (Radix-based) |
+| [Prisma 7](https://www.prisma.io) | Database ORM |
+| [PostgreSQL](https://www.postgresql.org) | Database |
+| [Better Auth](https://www.better-auth.com) | Authentication |
+| [next-intl](https://next-intl.dev) | Internationalization |
+| [Lucide React](https://lucide.dev) | Icons |
 
 ## Features
 
-- **Authentication** - Email/password and Google OAuth via Better Auth
-- **Database** - PostgreSQL with Prisma ORM (includes User, Session, Account, Verification models)
-- **Internationalization** - Multi-language support with next-intl (English and Spanish included)
-- **UI Components** - Button and Avatar components from shadcn/ui
-- **Styling** - Tailwind CSS v4 with dark mode support
-- **Type Safety** - Full TypeScript configuration
+- **Project management** -- Create projects with states (Idea, In Build, Live, Paused), brain dumps, and artifact links
+- **Kanban board** -- Drag-and-drop task management with To-Do, In Progress, and Done columns
+- **Task sections** -- Organize tasks by Product and Marketing
+- **Daily log** -- Quick updates with timestamped entries per project
+- **Authentication** -- Email/password and Google OAuth via Better Auth
+- **Dark/Light mode** -- Theme toggle with system preference detection
+- **Responsive** -- Collapsible sidebar, mobile-friendly layout
 
 ## Getting Started
 
-### 1. Clone and Install
+### 1. Install Dependencies
 
 ```bash
-git clone <your-repo-url>
-cd nextjs-starter-template
 npm install
 ```
 
 ### 2. Environment Setup
 
-Copy the example environment file:
+Copy the example environment file and configure:
 
 ```bash
 cp .env.example .env
 ```
 
-Configure your environment variables:
-
 ```env
 # Auth secret (generate with: openssl rand -base64 32)
 SECRET=your-secret-key
 
-# Google OAuth (optional - get from Google Cloud Console)
+# Google OAuth (optional)
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 
-# PostgreSQL database URL
-DATABASE_URL=postgresql://user:password@localhost:5432/mydb
+# PostgreSQL
+DATABASE_URL=postgresql://user:password@localhost:5432/clickstudio
 ```
 
 ### 3. Database Setup
 
 ```bash
-# Generate Prisma client
 npx prisma generate
-
-# Run migrations
 npx prisma migrate dev
 ```
 
-### 4. Run Development Server
+### 4. Run
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see your app.
+Open [http://localhost:3000](http://localhost:3000).
 
 ## Project Structure
 
 ```
-├── app/
-│   ├── api/auth/[...all]/    # Better Auth API routes
-│   ├── auth/                  # Auth pages (login, etc.)
-│   ├── dashboard/             # Protected dashboard
-│   ├── changelog/             # Changelog page
-│   ├── layout.tsx             # Root layout with next-intl provider
-│   ├── page.tsx               # Landing page
-│   └── globals.css            # Global styles
-├── components/
-│   ├── ui/                    # shadcn/ui components
-│   └── LanguageSwitcher.tsx   # Language toggle component
-├── lib/
-│   ├── auth.ts                # Better Auth configuration
-│   ├── auth-client.ts         # Auth client for frontend
-│   ├── prisma.ts              # Prisma client instance
-│   ├── utils.ts               # Utility functions (cn)
-│   └── generated/prisma/      # Generated Prisma client
-├── i18n/
-│   └── request.ts             # next-intl configuration
-├── messages/
-│   ├── en.json                # English translations
-│   └── es.json                # Spanish translations
-├── prisma/
-│   └── schema.prisma          # Database schema
-└── public/                    # Static assets
+app/
+  page.tsx                    Landing page (hero)
+  dashboard/
+    layout.tsx                Dashboard shell (sidebar + store)
+    page.tsx                  All projects view
+    [projectId]/page.tsx      Project detail (kanban + logs)
+  auth/login/page.tsx         Login page
+  api/auth/[...all]/route.ts  Better Auth API
+
+components/
+  dashboard/
+    app-sidebar.tsx           Sidebar navigation
+    kanban-board.tsx           Kanban with drag-and-drop
+    project-card.tsx           Project list item
+    project-form-dialog.tsx    Create/edit project
+    task-edit-dialog.tsx       Edit task
+    daily-log.tsx              Log entries
+    confirm-dialog.tsx         Destructive action confirmation
+    status-badge.tsx           Project state pill
+    theme-toggle.tsx           Dark/light mode
+  kanban.tsx                   shadcn kanban board primitives
+  brand-mark.tsx               Logo SVG
+  ui/                          shadcn/ui components
+
+lib/
+  store.tsx        Client-side state (localStorage, migrating to API)
+  types.ts         TypeScript interfaces
+  constants.ts     App constants and color configs
+  format.ts        Date/time formatting utilities
+  auth.ts          Better Auth configuration
+  prisma.ts        Prisma client singleton
+
+prisma/
+  schema.prisma    Database schema (auth + dashboard models)
 ```
 
-## Authentication
+## Database Schema
 
-This template uses [Better Auth](https://www.better-auth.com) with:
-
-- Email/password authentication (enabled)
-- Google OAuth (requires credentials)
-- Session management with database storage
-- PostgreSQL adapter via Prisma
-
-To add more social providers, update `lib/auth.ts`.
-
-## Internationalization
-
-Languages are managed via JSON files in `/messages`. The current locale is stored in a cookie.
-
-To add a new language:
-1. Create `messages/{locale}.json`
-2. Update the language switcher component
-
-## Adding UI Components
-
-This template includes shadcn/ui. Add more components with:
-
-```bash
-npx shadcn@latest add [component-name]
-```
+- **User** -- Better Auth user with projects relation
+- **Project** -- title, brainDump, artifactLinks, state (enum), belongs to user
+- **Task** -- title, columnId (todo/in-progress/done), section (Product/Marketing), belongs to project
+- **LogEntry** -- text, timestamp, belongs to project
 
 ## Scripts
 
@@ -140,25 +124,6 @@ npm run build    # Build for production
 npm run start    # Start production server
 npm run lint     # Run ESLint
 ```
-
-## Customization
-
-1. Update `app/layout.tsx` metadata with your app name
-2. Replace landing page content in `app/page.tsx`
-3. Modify translations in `messages/`
-4. Add your database models to `prisma/schema.prisma`
-5. Configure additional auth providers in `lib/auth.ts`
-
-## Deployment
-
-Deploy on [Vercel](https://vercel.com) or any platform supporting Next.js:
-
-```bash
-npm run build
-npm run start
-```
-
-Remember to set all environment variables in your deployment platform.
 
 ## License
 

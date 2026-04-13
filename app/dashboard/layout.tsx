@@ -1,38 +1,33 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { StoreProvider, useStore } from "@/lib/store"
 import { AppSidebar } from "@/components/dashboard/app-sidebar"
 import { ProjectFormDialog } from "@/components/dashboard/project-form-dialog"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { useRouter } from "next/navigation"
+import { createProject } from "@/lib/store"
 import type { ProjectState } from "@/lib/types"
 
-function DashboardShell({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const [dialogOpen, setDialogOpen] = useState(false)
-  const { addProject, ready } = useStore()
   const router = useRouter()
 
   const handleNewProject = useCallback(() => {
     setDialogOpen(true)
   }, [])
 
-  function handleSubmit(data: {
+  async function handleSubmit(data: {
     title: string
     brainDump: string
     artifactLinks: string
     state: ProjectState
   }) {
-    const project = addProject(data)
+    const project = await createProject(data)
     router.push(`/dashboard/${project.id}`)
-  }
-
-  if (!ready) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <span className="text-sm text-muted-foreground">Loading...</span>
-      </div>
-    )
   }
 
   return (
@@ -51,17 +46,5 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         onSubmit={handleSubmit}
       />
     </SidebarProvider>
-  )
-}
-
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  return (
-    <StoreProvider>
-      <DashboardShell>{children}</DashboardShell>
-    </StoreProvider>
   )
 }

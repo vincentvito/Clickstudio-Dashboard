@@ -4,41 +4,49 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ProjectCard } from "@/components/dashboard/project-card"
 import { ProjectFormDialog } from "@/components/dashboard/project-form-dialog"
-import { useStore } from "@/lib/store"
+import { useProjects, createProject } from "@/lib/store"
 import { PROJECT_STATES, PROJECT_STATE_CONFIG } from "@/lib/constants"
 import { Plus } from "lucide-react"
 import type { ProjectState } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 export default function DashboardPage() {
-  const { data, addProject } = useStore()
+  const { projects, tasks, logs, isLoading } = useProjects()
   const [filter, setFilter] = useState<"All" | ProjectState>("All")
   const [dialogOpen, setDialogOpen] = useState(false)
 
   const filtered =
     filter === "All"
-      ? data.projects
-      : data.projects.filter((p) => p.state === filter)
+      ? projects
+      : projects.filter((p) => p.state === filter)
 
   const sorted = [...filtered].sort((a, b) => {
     const la =
-      data.logs
+      logs
         .filter((l) => l.projectId === b.id)
         .sort((x, y) => (y.createdAt > x.createdAt ? 1 : -1))[0]?.createdAt ?? b.createdAt
     const lb =
-      data.logs
+      logs
         .filter((l) => l.projectId === a.id)
         .sort((x, y) => (y.createdAt > x.createdAt ? 1 : -1))[0]?.createdAt ?? a.createdAt
     return la > lb ? -1 : 1
   })
 
-  function handleSubmit(formData: {
+  async function handleSubmit(formData: {
     title: string
     brainDump: string
     artifactLinks: string
     state: ProjectState
   }) {
-    addProject(formData)
+    await createProject(formData)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <span className="text-sm text-muted-foreground">Loading...</span>
+      </div>
+    )
   }
 
   return (
@@ -74,7 +82,7 @@ export default function DashboardPage() {
               {s}
               {s !== "All" && (
                 <span className="ml-1 tabular-nums opacity-50">
-                  {data.projects.filter((p) => p.state === s).length}
+                  {projects.filter((p) => p.state === s).length}
                 </span>
               )}
             </button>
@@ -95,8 +103,8 @@ export default function DashboardPage() {
             <ProjectCard
               key={project.id}
               project={project}
-              tasks={data.tasks.filter((t) => t.projectId === project.id)}
-              logs={data.logs}
+              tasks={tasks.filter((t) => t.projectId === project.id)}
+              logs={logs}
             />
           ))}
         </div>
