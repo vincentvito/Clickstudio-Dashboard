@@ -1,5 +1,9 @@
 import { sendEmail } from "./email"
 
+function esc(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+}
+
 export async function sendInvitationEmail(
   email: string,
   orgName: string,
@@ -32,8 +36,8 @@ export async function sendInvitationEmail(
       </div>
 
       <p style="font-size: 15px; color: #333; line-height: 1.6; margin-bottom: 24px;">
-        <strong>${inviterName}</strong> invited you to join
-        <strong>${orgName}</strong> as a <strong>${roleLabel}</strong>.
+        <strong>${esc(inviterName)}</strong> invited you to join
+        <strong>${esc(orgName)}</strong> as a <strong>${roleLabel}</strong>.
       </p>
 
       <div style="background: #f8f8f8; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;">

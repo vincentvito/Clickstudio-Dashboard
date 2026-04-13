@@ -33,9 +33,15 @@ export async function POST(
     _max: { position: true },
   })
 
-  const connectAssignees = assigneeIds?.length
-    ? { connect: assigneeIds.map((id: string) => ({ id })) }
-    : { connect: [{ id: org.user.id }] }
+  let validAssigneeIds: string[] = [org.user.id]
+  if (assigneeIds?.length) {
+    const validMembers = await prisma.member.findMany({
+      where: { organizationId: org.organizationId, userId: { in: assigneeIds } },
+      select: { userId: true },
+    })
+    validAssigneeIds = validMembers.map((m) => m.userId)
+  }
+  const connectAssignees = { connect: validAssigneeIds.map((id) => ({ id })) }
 
   const task = await prisma.task.create({
     data: {

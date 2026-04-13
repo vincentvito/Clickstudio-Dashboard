@@ -53,7 +53,7 @@ export async function requireOrg() {
   }
 }
 
-export async function hasPermission(role: string, action: "create" | "update" | "delete") {
+export function hasPermission(role: string, action: "create" | "update" | "delete") {
   // Owner and admin can create/update/delete projects
   // Members cannot
   if (role === "owner" || role === "admin") return true

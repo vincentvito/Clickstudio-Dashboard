@@ -23,6 +23,17 @@ export async function PATCH(
 
   const body = await req.json()
 
+  let assigneesUpdate: Record<string, unknown> | undefined
+  if (body.assigneeIds !== undefined) {
+    const validMembers = await prisma.member.findMany({
+      where: { organizationId: org.organizationId, userId: { in: body.assigneeIds } },
+      select: { userId: true },
+    })
+    assigneesUpdate = {
+      assignees: { set: validMembers.map((m) => ({ id: m.userId })) },
+    }
+  }
+
   const updated = await prisma.task.update({
     where: { id: taskId },
     data: {
@@ -30,11 +41,7 @@ export async function PATCH(
       ...(body.columnId !== undefined && { columnId: body.columnId }),
       ...(body.section !== undefined && { section: body.section }),
       ...(body.position !== undefined && { position: body.position }),
-      ...(body.assigneeIds !== undefined && {
-        assignees: {
-          set: body.assigneeIds.map((id: string) => ({ id })),
-        },
-      }),
+      ...assigneesUpdate,
     },
     include: {
       assignees: { select: ASSIGNEE_SELECT },

@@ -12,7 +12,8 @@ import Link from 'next/link'
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+  const rawCallback = searchParams.get('callbackUrl') || '/dashboard'
+  const callbackUrl = rawCallback.startsWith('/') && !rawCallback.startsWith('//') ? rawCallback : '/dashboard'
   const { data: session } = useSession()
 
   const [step, setStep] = useState<'email' | 'otp'>('email')
