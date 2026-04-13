@@ -23,13 +23,13 @@
   },
   "Landing": {
     "nav": {
-      "brand": "Clickstudio",
+      "brand": "Click Studio",
       "signIn": "Sign In",
       "getStarted": "Get Started"
     },
     "hero": {
       "badge": "Project Command Hub",
-      "title": "Clickstudio",
+      "title": "Click Studio",
       "titleHighlight": "Control Center",
       "description": "Manage projects, track tasks, and ship faster. Your creative command center for turning ideas into live products.",
       "cta": "Enter Dashboard",

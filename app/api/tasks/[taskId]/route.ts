@@ -1,18 +1,20 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
-import { getSessionUser, unauthorized } from "@/lib/api-auth"
+import { requireOrg, unauthorized } from "@/lib/api-auth"
+
+const ASSIGNEE_SELECT = { id: true, name: true, email: true, image: true }
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ taskId: string }> },
 ) {
-  const user = await getSessionUser()
-  if (!user) return unauthorized()
+  const org = await requireOrg()
+  if (!org) return unauthorized()
 
   const { taskId } = await params
 
   const task = await prisma.task.findFirst({
-    where: { id: taskId, project: { userId: user.id } },
+    where: { id: taskId, project: { organizationId: org.organizationId } },
   })
 
   if (!task) {
@@ -28,6 +30,14 @@ export async function PATCH(
       ...(body.columnId !== undefined && { columnId: body.columnId }),
       ...(body.section !== undefined && { section: body.section }),
       ...(body.position !== undefined && { position: body.position }),
+      ...(body.assigneeIds !== undefined && {
+        assignees: {
+          set: body.assigneeIds.map((id: string) => ({ id })),
+        },
+      }),
+    },
+    include: {
+      assignees: { select: ASSIGNEE_SELECT },
     },
   })
 
@@ -38,13 +48,13 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ taskId: string }> },
 ) {
-  const user = await getSessionUser()
-  if (!user) return unauthorized()
+  const org = await requireOrg()
+  if (!org) return unauthorized()
 
   const { taskId } = await params
 
   const task = await prisma.task.findFirst({
-    where: { id: taskId, project: { userId: user.id } },
+    where: { id: taskId, project: { organizationId: org.organizationId } },
   })
 
   if (!task) {

@@ -1,18 +1,20 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
-import { getSessionUser, unauthorized } from "@/lib/api-auth"
+import { requireOrg, unauthorized } from "@/lib/api-auth"
+
+const ASSIGNEE_SELECT = { id: true, name: true, email: true, image: true }
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ projectId: string }> },
 ) {
-  const user = await getSessionUser()
-  if (!user) return unauthorized()
+  const org = await requireOrg()
+  if (!org) return unauthorized()
 
   const { projectId } = await params
 
   const project = await prisma.project.findFirst({
-    where: { id: projectId, userId: user.id },
+    where: { id: projectId, organizationId: org.organizationId },
   })
 
   if (!project) {
@@ -20,7 +22,7 @@ export async function POST(
   }
 
   const body = await req.json()
-  const { title, columnId, section } = body
+  const { title, columnId, section, assigneeIds } = body
 
   if (!title?.trim()) {
     return Response.json({ error: "Title is required" }, { status: 400 })
@@ -31,6 +33,10 @@ export async function POST(
     _max: { position: true },
   })
 
+  const connectAssignees = assigneeIds?.length
+    ? { connect: assigneeIds.map((id: string) => ({ id })) }
+    : { connect: [{ id: org.user.id }] }
+
   const task = await prisma.task.create({
     data: {
       title: title.trim(),
@@ -38,6 +44,10 @@ export async function POST(
       section: section ?? "Product",
       position: (maxPosition._max.position ?? -1) + 1,
       projectId,
+      assignees: connectAssignees,
+    },
+    include: {
+      assignees: { select: ASSIGNEE_SELECT },
     },
   })
 

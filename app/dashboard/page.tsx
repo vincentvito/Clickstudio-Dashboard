@@ -1,36 +1,45 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { ProjectCard } from "@/components/dashboard/project-card"
 import { ProjectFormDialog } from "@/components/dashboard/project-form-dialog"
 import { useProjects, createProject } from "@/lib/store"
 import { PROJECT_STATES, PROJECT_STATE_CONFIG } from "@/lib/constants"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Plus } from "lucide-react"
 import type { ProjectState } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 export default function DashboardPage() {
-  const { projects, tasks, logs, isLoading } = useProjects()
+  const { projects, logs, isLoading } = useProjects()
   const [filter, setFilter] = useState<"All" | ProjectState>("All")
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  const filtered =
-    filter === "All"
-      ? projects
-      : projects.filter((p) => p.state === filter)
+  // Pre-compute latest log timestamp per project (O(n) instead of O(n²))
+  const latestLogByProject = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const log of logs) {
+      const existing = map.get(log.projectId)
+      if (!existing || log.createdAt > existing) {
+        map.set(log.projectId, log.createdAt)
+      }
+    }
+    return map
+  }, [logs])
 
-  const sorted = [...filtered].sort((a, b) => {
-    const la =
-      logs
-        .filter((l) => l.projectId === b.id)
-        .sort((x, y) => (y.createdAt > x.createdAt ? 1 : -1))[0]?.createdAt ?? b.createdAt
-    const lb =
-      logs
-        .filter((l) => l.projectId === a.id)
-        .sort((x, y) => (y.createdAt > x.createdAt ? 1 : -1))[0]?.createdAt ?? a.createdAt
-    return la > lb ? -1 : 1
-  })
+  const sorted = useMemo(() => {
+    const filtered =
+      filter === "All"
+        ? projects
+        : projects.filter((p) => p.state === filter)
+
+    return [...filtered].sort((a, b) => {
+      const la = latestLogByProject.get(b.id) ?? b.createdAt
+      const lb = latestLogByProject.get(a.id) ?? a.createdAt
+      return la > lb ? -1 : 1
+    })
+  }, [projects, filter, latestLogByProject])
 
   async function handleSubmit(formData: {
     title: string
@@ -43,8 +52,21 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <span className="text-sm text-muted-foreground">Loading...</span>
+      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8 space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-6 w-32 rounded-md" />
+          <Skeleton className="h-8 w-28 rounded-md" />
+        </div>
+        <div className="flex gap-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-7 w-16 rounded-md" />
+          ))}
+        </div>
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-lg" />
+          ))}
+        </div>
       </div>
     )
   }
@@ -103,8 +125,8 @@ export default function DashboardPage() {
             <ProjectCard
               key={project.id}
               project={project}
-              tasks={tasks.filter((t) => t.projectId === project.id)}
-              logs={logs}
+              tasks={project.tasks ?? []}
+              lastActivity={latestLogByProject.get(project.id) ?? project.createdAt}
             />
           ))}
         </div>

@@ -1,18 +1,18 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
-import { getSessionUser, unauthorized } from "@/lib/api-auth"
+import { requireOrg, unauthorized } from "@/lib/api-auth"
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ projectId: string }> },
 ) {
-  const user = await getSessionUser()
-  if (!user) return unauthorized()
+  const org = await requireOrg()
+  if (!org) return unauthorized()
 
   const { projectId } = await params
 
   const project = await prisma.project.findFirst({
-    where: { id: projectId, userId: user.id },
+    where: { id: projectId, organizationId: org.organizationId },
   })
 
   if (!project) {

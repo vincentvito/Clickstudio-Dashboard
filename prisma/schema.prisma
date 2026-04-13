@@ -19,22 +19,27 @@ model User {
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
+  members       Member[]
+  invitations   Invitation[] @relation("InviterInvitations")
   projects      Project[]
+  assignedTasks Task[]       @relation("TaskAssignees")
+  notes         Note[]
 
   @@unique([email])
   @@map("user")
 }
 
 model Session {
-  id        String   @id
-  expiresAt DateTime
-  token     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                   String   @id
+  expiresAt            DateTime
+  token                String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  ipAddress            String?
+  userAgent            String?
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeOrganizationId String?
 
   @@unique([token])
   @@index([userId])
@@ -73,6 +78,56 @@ model Verification {
   @@map("verification")
 }
 
+// ─── Organizations ──────────────────────────────────────
+
+model Organization {
+  id        String   @id
+  name      String
+  slug      String   @unique
+  logo      String?
+  metadata  String?
+  createdAt DateTime @default(now())
+
+  members     Member[]
+  invitations Invitation[]
+  projects    Project[]
+
+  @@map("organization")
+}
+
+model Member {
+  id             String   @id
+  userId         String
+  organizationId String
+  role           String
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@map("member")
+}
+
+model Invitation {
+  id             String   @id
+  email          String
+  inviterId      String
+  organizationId String
+  role           String?
+  status         String
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+
+  inviter      User         @relation("InviterInvitations", fields: [inviterId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([organizationId])
+  @@map("invitation")
+}
+
 // ─── Dashboard ──────────────────────────────────────────
 
 model Project {
@@ -84,12 +139,17 @@ model Project {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
 
   tasks Task[]
   logs  LogEntry[]
+  notes Note[]
 
+  @@index([organizationId])
   @@index([userId])
   @@map("project")
 }
@@ -100,6 +160,8 @@ model Task {
   columnId String      @default("todo")
   section  TaskSection @default(Product)
   position Int         @default(0)
+
+  assignees User[] @relation("TaskAssignees")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -122,6 +184,24 @@ model LogEntry {
 
   @@index([projectId])
   @@map("log_entry")
+}
+
+model Note {
+  id      String @id @default(cuid())
+  title   String @default("")
+  content String @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  @@index([projectId])
+  @@map("note")
 }
 
 // ─── Enums ──────────────────────────────────────────────

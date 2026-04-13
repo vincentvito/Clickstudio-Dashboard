@@ -10,6 +10,7 @@ import {
   Activity,
 } from 'lucide-react'
 import { BrandMark } from '@/components/brand-mark'
+import { ThemeToggle } from '@/components/dashboard/theme-toggle'
 
 export default async function LandingPage() {
   const t = await getTranslations('Landing')
@@ -66,12 +67,15 @@ export default async function LandingPage() {
             </span>
           </div>
 
-          <Button size="sm" asChild className="shadow-md shadow-primary/20">
-            <Link href="/auth/login">
-              {t('nav.signIn')}
-              <ArrowRight className="ml-1 h-3.5 w-3.5" />
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Button size="sm" asChild>
+              <Link href="/dashboard">
+                {t('nav.signIn')}
+                <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </div>
         </div>
       </nav>
 
@@ -124,28 +128,17 @@ export default async function LandingPage() {
 
           {/* CTA */}
           <div
-            className="animate-fade-up mt-10 flex flex-col items-center gap-3 sm:flex-row"
+            className="animate-fade-up mt-10"
             style={{ animationDelay: '300ms' }}
           >
             <Button
               size="lg"
               asChild
-              className="w-full shadow-lg shadow-primary/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary/40 sm:w-auto"
+              className="shadow-lg shadow-primary/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary/40"
             >
               <Link href="/dashboard">
                 <LayoutDashboard className="mr-2 h-4 w-4" />
                 {t('hero.cta')}
-              </Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              asChild
-              className="w-full border-border/60 sm:w-auto"
-            >
-              <Link href="/auth/login">
-                {t('hero.ctaSecondary')}
-                <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </div>

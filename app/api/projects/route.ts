@@ -1,26 +1,38 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
-import { getSessionUser, unauthorized } from "@/lib/api-auth"
+import { requireOrg, hasPermission, unauthorized, forbidden } from "@/lib/api-auth"
+import { stateToPrisma, stateFromPrisma } from "@/lib/enum-map"
 
 export async function GET() {
-  const user = await getSessionUser()
-  if (!user) return unauthorized()
+  const org = await requireOrg()
+  if (!org) return unauthorized()
 
   const projects = await prisma.project.findMany({
-    where: { userId: user.id },
+    where: { organizationId: org.organizationId },
     include: {
-      tasks: true,
+      tasks: {
+        include: { assignees: { select: { id: true, name: true, email: true, image: true } } },
+      },
       logs: { orderBy: { createdAt: "desc" }, take: 1 },
+      user: { select: { id: true, name: true, email: true, image: true } },
     },
     orderBy: { createdAt: "desc" },
   })
 
-  return Response.json(projects)
+  const mapped = projects.map((p) => ({
+    ...p,
+    state: stateFromPrisma(p.state),
+    tasks: p.tasks.map((t) => ({ ...t, section: t.section as string })),
+  }))
+
+  return Response.json(mapped)
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getSessionUser()
-  if (!user) return unauthorized()
+  const org = await requireOrg()
+  if (!org) return unauthorized()
+
+  if (!hasPermission(org.role, "create")) return forbidden()
 
   const body = await req.json()
   const { title, brainDump, artifactLinks, state } = body
@@ -34,10 +46,11 @@ export async function POST(req: NextRequest) {
       title: title.trim(),
       brainDump: brainDump ?? "",
       artifactLinks: artifactLinks ?? "",
-      state: state ?? "Idea",
-      userId: user.id,
+      state: stateToPrisma(state ?? "Idea") as any,
+      organizationId: org.organizationId,
+      userId: org.user.id,
     },
   })
 
-  return Response.json(project, { status: 201 })
+  return Response.json({ ...project, state: stateFromPrisma(project.state) }, { status: 201 })
 }

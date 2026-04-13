@@ -2,6 +2,13 @@ export type ProjectState = "Idea" | "In Build" | "Live" | "Paused"
 
 export type TaskSection = "Product" | "Marketing"
 
+export interface UserSummary {
+  id: string
+  name: string | null
+  email: string
+  image: string | null
+}
+
 export interface Project {
   id: string
   title: string
@@ -9,6 +16,7 @@ export interface Project {
   artifactLinks: string
   state: ProjectState
   createdAt: string
+  user?: UserSummary
 }
 
 export interface Task {
@@ -17,6 +25,7 @@ export interface Task {
   section: TaskSection
   title: string
   columnId: string
+  assignees: UserSummary[]
 }
 
 export interface LogEntry {
@@ -24,6 +33,17 @@ export interface LogEntry {
   projectId: string
   text: string
   createdAt: string
+}
+
+export interface Note {
+  id: string
+  projectId: string
+  title: string
+  content: string
+  createdAt: string
+  updatedAt: string
+  authorId: string
+  author?: UserSummary
 }
 
 export interface AppData {
