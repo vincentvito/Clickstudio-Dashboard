@@ -53,8 +53,8 @@ export async function POST(req: NextRequest) {
 
       await sendInvitationEmail(
         trimmed,
-        invitation.organization?.name ?? "Click Studio",
-        org.user.name ?? org.user.email,
+        "Click Studio",
+        org.user.name || org.user.email,
         role,
         acceptUrl,
       )

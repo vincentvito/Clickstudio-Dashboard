@@ -225,7 +225,7 @@ export async function updateNote(id: string, updates: Partial<Note>) {
 export async function deleteNote(id: string) {
   try {
     await api(`/api/notes/${id}`, "DELETE")
-    revalidate()
+    revalidateAll()
     toast.success("Note deleted")
   } catch (e: any) {
     toast.error(e.message ?? "Failed to delete note")

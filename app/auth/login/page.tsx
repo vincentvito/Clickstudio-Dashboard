@@ -207,7 +207,7 @@ export default function LoginPage() {
             <p className="mt-6 text-center text-xs text-muted-foreground">
               Didn&apos;t receive the code?{' '}
               <button
-                onClick={handleSendOtp as () => void}
+                onClick={() => handleSendOtp({ preventDefault: () => {} } as React.FormEvent)}
                 className="font-medium text-foreground underline-offset-2 hover:underline"
                 disabled={loading}
               >
