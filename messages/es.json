@@ -1,0 +1,63 @@
+{
+  "HomePage": {
+    "title": "Hola mundo!",
+    "description": "Bienvenido a nuestra aplicacion internacionalizada"
+  },
+  "LanguageSwitcher": {
+    "label": "Idioma",
+    "en": "Ingles",
+    "es": "Espanol"
+  },
+  "Auth": {
+    "title": "Inicia sesion en tu cuenta",
+    "subtitle": "Continua con tu cuenta de Google",
+    "googleButton": "Continuar con Google",
+    "loading": "Cargando..."
+  },
+  "Dashboard": {
+    "title": "Panel de control",
+    "welcome": "Bienvenido, {name}!",
+    "description": "Has iniciado sesion en tu panel de control.",
+    "signOut": "Cerrar sesion",
+    "loading": "Cargando..."
+  },
+  "Landing": {
+    "nav": {
+      "brand": "Clickstudio",
+      "signIn": "Iniciar Sesion",
+      "getStarted": "Comenzar"
+    },
+    "hero": {
+      "badge": "Centro de Comando de Proyectos",
+      "title": "Clickstudio",
+      "titleHighlight": "Control Center",
+      "description": "Gestiona proyectos, rastrea tareas y entrega mas rapido. Tu centro de comando creativo para convertir ideas en productos reales.",
+      "cta": "Entrar al Panel",
+      "ctaSecondary": "Iniciar Sesion",
+      "card": {
+        "title": "Estado de Mision",
+        "status": "Todos los sistemas activos",
+        "projects": "Proyectos",
+        "live": "activos",
+        "building": "en desarrollo",
+        "tasks": "Tareas",
+        "shipped": "Enviados",
+        "thisWeek": "+5 esta semana"
+      }
+    }
+  },
+  "Changelog": {
+    "title": "Historial de Cambios",
+    "description": "Todos los cambios notables de este proyecto estan documentados aqui.",
+    "backHome": "Volver al inicio",
+    "latest": "Ultimo",
+    "types": {
+      "added": "Agregado",
+      "changed": "Cambiado",
+      "fixed": "Corregido",
+      "removed": "Eliminado"
+    },
+    "moreHistory": "Buscas mas historial?",
+    "viewGithub": "Ver historial completo en GitHub"
+  }
+}

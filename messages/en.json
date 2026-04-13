@@ -1,0 +1,63 @@
+{
+  "HomePage": {
+    "title": "Hello world!",
+    "description": "Welcome to our internationalized app"
+  },
+  "LanguageSwitcher": {
+    "label": "Language",
+    "en": "English",
+    "es": "Spanish"
+  },
+  "Auth": {
+    "title": "Sign in to your account",
+    "subtitle": "Continue with your Google account",
+    "googleButton": "Continue with Google",
+    "loading": "Loading..."
+  },
+  "Dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome, {name}!",
+    "description": "You are now signed in to your dashboard.",
+    "signOut": "Sign out",
+    "loading": "Loading..."
+  },
+  "Landing": {
+    "nav": {
+      "brand": "Clickstudio",
+      "signIn": "Sign In",
+      "getStarted": "Get Started"
+    },
+    "hero": {
+      "badge": "Project Command Hub",
+      "title": "Clickstudio",
+      "titleHighlight": "Control Center",
+      "description": "Manage projects, track tasks, and ship faster. Your creative command center for turning ideas into live products.",
+      "cta": "Enter Dashboard",
+      "ctaSecondary": "Sign In",
+      "card": {
+        "title": "Mission Status",
+        "status": "All systems go",
+        "projects": "Projects",
+        "live": "live",
+        "building": "building",
+        "tasks": "Tasks",
+        "shipped": "Shipped",
+        "thisWeek": "+5 this week"
+      }
+    }
+  },
+  "Changelog": {
+    "title": "Changelog",
+    "description": "All notable changes to this project are documented here.",
+    "backHome": "Back to home",
+    "latest": "Latest",
+    "types": {
+      "added": "Added",
+      "changed": "Changed",
+      "fixed": "Fixed",
+      "removed": "Removed"
+    },
+    "moreHistory": "Looking for more history?",
+    "viewGithub": "View full changelog on GitHub"
+  }
+}
