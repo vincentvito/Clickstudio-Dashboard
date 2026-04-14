@@ -30,7 +30,15 @@ import { useProjects, useOrgMembers } from "@/lib/store"
 import { useSession, signOut } from "@/lib/auth-client"
 import { PROJECT_STATE_CONFIG } from "@/lib/constants"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Plus, LogOut, ChevronsUpDown, Wrench, Users } from "lucide-react"
+import {
+  LayoutDashboard,
+  Plus,
+  LogOut,
+  ChevronsUpDown,
+  Wrench,
+  Users,
+  Sparkles,
+} from "lucide-react"
 import { BrandMark } from "@/components/brand-mark"
 import { APP_VERSION } from "@/lib/changelog"
 
@@ -47,8 +55,13 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
 
   const user = session?.user
   const initials = user?.name
-    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
-    : user?.email?.[0]?.toUpperCase() ?? "?"
+    ? user.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : (user?.email?.[0]?.toUpperCase() ?? "?")
   const currentMember = members.find((m) => m.id === user?.id)
   const isOwnerOrAdmin = currentMember?.role === "owner" || currentMember?.role === "admin"
 
@@ -64,14 +77,12 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg text-primary">
+                <div className="text-primary flex aspect-square size-8 items-center justify-center rounded-lg">
                   <BrandMark className="size-8" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-bold">Click Studio</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    Control Center
-                  </span>
+                  <span className="text-muted-foreground truncate text-xs">Control Center</span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -118,6 +129,18 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith("/dashboard/agents")}
+                  tooltip="Agents"
+                >
+                  <Link href="/dashboard/agents">
+                    <Sparkles />
+                    <span>Agents</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -130,7 +153,7 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               {projects.length === 0 && (
-                <p className="px-2 py-3 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+                <p className="text-muted-foreground px-2 py-3 text-xs group-data-[collapsible=icon]:hidden">
                   No projects yet
                 </p>
               )}
@@ -141,11 +164,7 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
 
                 return (
                   <SidebarMenuItem key={project.id}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      tooltip={project.title}
-                    >
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={project.title}>
                       <Link href={`/dashboard/${project.id}`}>
                         <span
                           className={cn(
@@ -156,9 +175,7 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
                         <span>{project.title}</span>
                       </Link>
                     </SidebarMenuButton>
-                    {taskCount > 0 && (
-                      <SidebarMenuBadge>{taskCount}</SidebarMenuBadge>
-                    )}
+                    {taskCount > 0 && <SidebarMenuBadge>{taskCount}</SidebarMenuBadge>}
                   </SidebarMenuItem>
                 )
               })}
@@ -171,11 +188,7 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
         <SidebarMenu>
           {isOwnerOrAdmin && (
             <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === "/dashboard/admin"}
-                tooltip="Admin"
-              >
+              <SidebarMenuButton asChild isActive={pathname === "/dashboard/admin"} tooltip="Admin">
                 <Link href="/dashboard/admin">
                   <Users />
                   <span>Admin</span>
@@ -187,13 +200,10 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent"
-                >
+                <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent">
                   <Avatar className="size-7">
                     {user?.image && <AvatarImage src={user.image} alt={user.name ?? ""} />}
-                    <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
@@ -201,11 +211,11 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
                     <span className="truncate text-xs font-medium">
                       {user?.name || user?.email?.split("@")[0] || "User"}
                     </span>
-                    <span className="truncate text-[11px] text-muted-foreground">
+                    <span className="text-muted-foreground truncate text-[11px]">
                       {user?.email}
                     </span>
                   </div>
-                  <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
+                  <ChevronsUpDown className="text-muted-foreground ml-auto size-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -217,7 +227,7 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
                 <div className="flex items-center gap-2 px-2 py-1.5">
                   <Avatar className="size-7">
                     {user?.image && <AvatarImage src={user.image} alt={user.name ?? ""} />}
-                    <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
@@ -225,7 +235,7 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
                     <span className="truncate text-xs font-medium">
                       {user?.name || user?.email?.split("@")[0] || "User"}
                     </span>
-                    <span className="truncate text-[11px] text-muted-foreground">
+                    <span className="text-muted-foreground truncate text-[11px]">
                       {user?.email}
                     </span>
                   </div>
@@ -233,12 +243,15 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/changelog" className="gap-2">
-                    <span className="text-xs text-muted-foreground">v{APP_VERSION}</span>
+                    <span className="text-muted-foreground text-xs">v{APP_VERSION}</span>
                     <span>Changelog</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="gap-2 text-destructive focus:text-destructive">
+                <DropdownMenuItem
+                  onClick={handleSignOut}
+                  className="text-destructive focus:text-destructive gap-2"
+                >
                   <LogOut className="size-4" />
                   Sign out
                 </DropdownMenuItem>

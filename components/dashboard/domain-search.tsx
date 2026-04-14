@@ -58,7 +58,11 @@ export function DomainSearch() {
     e.preventDefault()
     if (!query.trim()) return
 
-    const base = query.trim().toLowerCase().replace(/\s+/g, "").replace(/\.[a-z]+$/, "")
+    const base = query
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "")
+      .replace(/\.[a-z]+$/, "")
     setSearching(true)
 
     // Initialize all as checking
@@ -85,8 +89,8 @@ export function DomainSearch() {
   return (
     <div>
       <div className="mb-4 flex items-center gap-2">
-        <Globe className="size-4 text-muted-foreground" />
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <Globe className="text-muted-foreground size-4" />
+        <span className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
           Domain Search
         </span>
       </div>
@@ -99,7 +103,11 @@ export function DomainSearch() {
           className="flex-1"
         />
         <Button type="submit" size="sm" className="shrink-0 gap-1.5" disabled={searching}>
-          {searching ? <Loader2 className="size-3.5 animate-spin" /> : <Search className="size-3.5" />}
+          {searching ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <Search className="size-3.5" />
+          )}
           Search
         </Button>
       </form>
@@ -109,22 +117,26 @@ export function DomainSearch() {
           {results.map((r) => (
             <div
               key={r.domain}
-              className="flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors hover:bg-accent/5"
+              className="hover:bg-accent/5 flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors"
             >
               <div className="flex items-center gap-2">
                 {r.checking ? (
-                  <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+                  <Loader2 className="text-muted-foreground size-3.5 animate-spin" />
                 ) : r.available ? (
                   <Check className="size-3.5 text-emerald-400" />
                 ) : (
-                  <X className="size-3.5 text-muted-foreground/40" />
+                  <X className="text-muted-foreground/40 size-3.5" />
                 )}
-                <span className={`text-sm font-mono ${r.checking ? "text-muted-foreground" : r.available ? "text-foreground" : "text-muted-foreground/60"}`}>
+                <span
+                  className={`font-mono text-sm ${r.checking ? "text-muted-foreground" : r.available ? "text-foreground" : "text-muted-foreground/60"}`}
+                >
                   {r.domain}
                 </span>
               </div>
               {r.checking ? (
-                <Badge variant="outline" className="text-muted-foreground/50">Checking...</Badge>
+                <Badge variant="outline" className="text-muted-foreground/50">
+                  Checking...
+                </Badge>
               ) : (
                 <Badge
                   variant="outline"
@@ -143,7 +155,7 @@ export function DomainSearch() {
       )}
 
       {results.length === 0 && !searching && (
-        <p className="py-12 text-center text-sm text-muted-foreground">
+        <p className="text-muted-foreground py-12 text-center text-sm">
           Enter a name to check availability across popular extensions
         </p>
       )}

@@ -4,7 +4,11 @@ interface SendEmailParams {
   html: string
 }
 
-export async function sendEmail({ to, subject, html }: SendEmailParams): Promise<{ success: boolean; error?: string }> {
+export async function sendEmail({
+  to,
+  subject,
+  html,
+}: SendEmailParams): Promise<{ success: boolean; error?: string }> {
   const apiUrl = process.env.ZEPTOMAIL_API_URL
   const apiKey = process.env.ZEPTO_MAIL_API_KEY
   const fromEmail = process.env.EMAIL_FROM ?? "noreply@clickstudio.com"

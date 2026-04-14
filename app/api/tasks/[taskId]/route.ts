@@ -1,13 +1,11 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
 import { requireOrg, unauthorized } from "@/lib/api-auth"
+import { createNotifications } from "@/lib/notifications"
 
 const ASSIGNEE_SELECT = { id: true, name: true, email: true, image: true }
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ taskId: string }> },
-) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ taskId: string }> }) {
   const org = await requireOrg()
   if (!org) return unauthorized()
 
@@ -15,6 +13,7 @@ export async function PATCH(
 
   const task = await prisma.task.findFirst({
     where: { id: taskId, project: { organizationId: org.organizationId } },
+    include: { assignees: { select: { id: true } } },
   })
 
   if (!task) {
@@ -24,14 +23,18 @@ export async function PATCH(
   const body = await req.json()
 
   let assigneesUpdate: Record<string, unknown> | undefined
+  let newAssigneeIds: string[] = []
   if (body.assigneeIds !== undefined) {
     const validMembers = await prisma.member.findMany({
       where: { organizationId: org.organizationId, userId: { in: body.assigneeIds } },
       select: { userId: true },
     })
+    const validIds = validMembers.map((m) => m.userId)
     assigneesUpdate = {
-      assignees: { set: validMembers.map((m) => ({ id: m.userId })) },
+      assignees: { set: validIds.map((id) => ({ id })) },
     }
+    const existingIds = new Set(task.assignees.map((a) => a.id))
+    newAssigneeIds = validIds.filter((id) => !existingIds.has(id))
   }
 
   const updated = await prisma.task.update({
@@ -47,6 +50,21 @@ export async function PATCH(
       assignees: { select: ASSIGNEE_SELECT },
     },
   })
+
+  // Notify newly added assignees (not the person making the change)
+  if (newAssigneeIds.length > 0) {
+    const inviterName = org.user.name || org.user.email
+    await createNotifications(
+      newAssigneeIds
+        .filter((id) => id !== org.user.id)
+        .map((userId) => ({
+          userId,
+          type: "task_assigned",
+          message: `${inviterName} assigned you to "${updated.title}"`,
+          link: `/dashboard/${updated.projectId}?tab=tasks&task=${updated.id}`,
+        })),
+    )
+  }
 
   return Response.json(updated)
 }

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
 import { requireOrg, unauthorized } from "@/lib/api-auth"
+import { createNotifications } from "@/lib/notifications"
 
 const ASSIGNEE_SELECT = { id: true, name: true, email: true, image: true }
 
@@ -56,6 +57,19 @@ export async function POST(
       assignees: { select: ASSIGNEE_SELECT },
     },
   })
+
+  // Notify assignees (except the creator)
+  const inviterName = org.user.name || org.user.email
+  await createNotifications(
+    validAssigneeIds
+      .filter((id) => id !== org.user.id)
+      .map((userId) => ({
+        userId,
+        type: "task_assigned",
+        message: `${inviterName} assigned you to "${task.title}"`,
+        link: `/dashboard/${projectId}?tab=tasks&task=${task.id}`,
+      })),
+  )
 
   return Response.json(task, { status: 201 })
 }

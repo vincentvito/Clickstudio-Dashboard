@@ -30,10 +30,7 @@ export const PROJECT_STATE_CONFIG: Record<
   },
 }
 
-export const SECTION_CONFIG: Record<
-  TaskSection,
-  { color: string; bg: string }
-> = {
+export const SECTION_CONFIG: Record<TaskSection, { color: string; bg: string }> = {
   Product: { color: "text-primary", bg: "bg-primary/10" },
   Marketing: { color: "text-rose-400", bg: "bg-rose-400/10" },
 }

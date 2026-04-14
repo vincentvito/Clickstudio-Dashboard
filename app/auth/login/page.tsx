@@ -1,26 +1,27 @@
-'use client'
+"use client"
 
-import { useState, useRef, useEffect } from 'react'
-import { authClient, useSession } from '@/lib/auth-client'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { BrandMark } from '@/components/brand-mark'
-import { ArrowLeft, Loader2 } from 'lucide-react'
-import Link from 'next/link'
+import { useState, useRef, useEffect } from "react"
+import { authClient, useSession } from "@/lib/auth-client"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { BrandMark } from "@/components/brand-mark"
+import { ArrowLeft, Loader2 } from "lucide-react"
+import Link from "next/link"
 
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const rawCallback = searchParams.get('callbackUrl') || '/dashboard'
-  const callbackUrl = rawCallback.startsWith('/') && !rawCallback.startsWith('//') ? rawCallback : '/dashboard'
+  const rawCallback = searchParams.get("callbackUrl") || "/dashboard"
+  const callbackUrl =
+    rawCallback.startsWith("/") && !rawCallback.startsWith("//") ? rawCallback : "/dashboard"
   const { data: session } = useSession()
 
-  const [step, setStep] = useState<'email' | 'otp'>('email')
-  const [email, setEmail] = useState('')
-  const [otp, setOtp] = useState(['', '', '', '', '', ''])
+  const [step, setStep] = useState<"email" | "otp">("email")
+  const [email, setEmail] = useState("")
+  const [otp, setOtp] = useState(["", "", "", "", "", ""])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState("")
 
   const otpRefs = useRef<(HTMLInputElement | null)[]>([])
 
@@ -35,22 +36,22 @@ export default function LoginPage() {
     if (!email.trim()) return
 
     setLoading(true)
-    setError('')
+    setError("")
 
     try {
       const res = await authClient.emailOtp.sendVerificationOtp({
         email: email.trim(),
-        type: 'sign-in',
+        type: "sign-in",
       })
 
       if (res.error) {
-        setError(res.error.message ?? 'Failed to send code')
+        setError(res.error.message ?? "Failed to send code")
       } else {
-        setStep('otp')
+        setStep("otp")
         setTimeout(() => otpRefs.current[0]?.focus(), 50)
       }
     } catch {
-      setError('Failed to send code')
+      setError("Failed to send code")
     } finally {
       setLoading(false)
     }
@@ -58,7 +59,7 @@ export default function LoginPage() {
 
   async function verifyOtp(code: string) {
     setLoading(true)
-    setError('')
+    setError("")
 
     try {
       const res = await authClient.signIn.emailOtp({
@@ -67,15 +68,15 @@ export default function LoginPage() {
       })
 
       if (res.error) {
-        setError(res.error.message ?? 'Invalid code')
-        setOtp(['', '', '', '', '', ''])
+        setError(res.error.message ?? "Invalid code")
+        setOtp(["", "", "", "", "", ""])
         otpRefs.current[0]?.focus()
       } else {
         router.push(callbackUrl)
       }
     } catch {
-      setError('Verification failed')
-      setOtp(['', '', '', '', '', ''])
+      setError("Verification failed")
+      setOtp(["", "", "", "", "", ""])
       otpRefs.current[0]?.focus()
     } finally {
       setLoading(false)
@@ -85,7 +86,7 @@ export default function LoginPage() {
   function handleOtpChange(index: number, value: string) {
     if (value.length > 1) {
       // Handle paste
-      const digits = value.replace(/\D/g, '').slice(0, 6).split('')
+      const digits = value.replace(/\D/g, "").slice(0, 6).split("")
       const next = [...otp]
       digits.forEach((d, i) => {
         if (index + i < 6) next[index + i] = d
@@ -95,13 +96,13 @@ export default function LoginPage() {
       const lastFilled = Math.min(index + digits.length, 5)
       otpRefs.current[lastFilled]?.focus()
 
-      if (next.every((d) => d !== '')) {
-        verifyOtp(next.join(''))
+      if (next.every((d) => d !== "")) {
+        verifyOtp(next.join(""))
       }
       return
     }
 
-    const digit = value.replace(/\D/g, '')
+    const digit = value.replace(/\D/g, "")
     const next = [...otp]
     next[index] = digit
     setOtp(next)
@@ -110,32 +111,32 @@ export default function LoginPage() {
       otpRefs.current[index + 1]?.focus()
     }
 
-    if (next.every((d) => d !== '')) {
-      verifyOtp(next.join(''))
+    if (next.every((d) => d !== "")) {
+      verifyOtp(next.join(""))
     }
   }
 
   function handleOtpKeyDown(index: number, e: React.KeyboardEvent) {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
       otpRefs.current[index - 1]?.focus()
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="bg-background flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-sm">
         {/* Brand */}
         <div className="mb-8 text-center">
           <Link href="/" className="inline-flex items-center gap-2">
-            <BrandMark className="size-8 text-primary" />
+            <BrandMark className="text-primary size-8" />
             <span className="text-lg font-bold">Click Studio</span>
           </Link>
         </div>
 
-        {step === 'email' ? (
+        {step === "email" ? (
           <form onSubmit={handleSendOtp}>
             <h1 className="mb-1 text-center text-lg font-bold">Sign in</h1>
-            <p className="mb-6 text-center text-sm text-muted-foreground">
+            <p className="text-muted-foreground mb-6 text-center text-sm">
               Enter your email to receive a login code
             </p>
 
@@ -149,31 +150,29 @@ export default function LoginPage() {
               className="mb-3"
             />
 
-            {error && (
-              <p className="mb-3 text-center text-xs text-destructive">{error}</p>
-            )}
+            {error && <p className="text-destructive mb-3 text-center text-xs">{error}</p>}
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                'Send code'
-              )}
+              {loading ? <Loader2 className="size-4 animate-spin" /> : "Send code"}
             </Button>
           </form>
         ) : (
           <div>
             <button
-              onClick={() => { setStep('email'); setError(''); setOtp(['', '', '', '', '', '']) }}
-              className="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+              onClick={() => {
+                setStep("email")
+                setError("")
+                setOtp(["", "", "", "", "", ""])
+              }}
+              className="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1 text-xs transition-colors"
             >
               <ArrowLeft className="size-3" />
               Back
             </button>
 
             <h1 className="mb-1 text-lg font-bold">Check your email</h1>
-            <p className="mb-6 text-sm text-muted-foreground">
-              We sent a 6-digit code to <span className="font-medium text-foreground">{email}</span>
+            <p className="text-muted-foreground mb-6 text-sm">
+              We sent a 6-digit code to <span className="text-foreground font-medium">{email}</span>
             </p>
 
             {/* OTP inputs */}
@@ -181,7 +180,9 @@ export default function LoginPage() {
               {otp.map((digit, i) => (
                 <Input
                   key={i}
-                  ref={(el) => { otpRefs.current[i] = el }}
+                  ref={(el) => {
+                    otpRefs.current[i] = el
+                  }}
                   type="text"
                   inputMode="numeric"
                   maxLength={6}
@@ -194,21 +195,19 @@ export default function LoginPage() {
               ))}
             </div>
 
-            {error && (
-              <p className="mb-3 text-center text-xs text-destructive">{error}</p>
-            )}
+            {error && <p className="text-destructive mb-3 text-center text-xs">{error}</p>}
 
             {loading && (
               <div className="flex justify-center">
-                <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                <Loader2 className="text-muted-foreground size-4 animate-spin" />
               </div>
             )}
 
-            <p className="mt-6 text-center text-xs text-muted-foreground">
-              Didn&apos;t receive the code?{' '}
+            <p className="text-muted-foreground mt-6 text-center text-xs">
+              Didn&apos;t receive the code?{" "}
               <button
                 onClick={() => handleSendOtp({ preventDefault: () => {} } as React.FormEvent)}
-                className="font-medium text-foreground underline-offset-2 hover:underline"
+                className="text-foreground font-medium underline-offset-2 hover:underline"
                 disabled={loading}
               >
                 Resend

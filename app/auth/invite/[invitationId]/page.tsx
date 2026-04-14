@@ -12,7 +12,9 @@ export default function AcceptInvitePage() {
   const params = useParams<{ invitationId: string }>()
   const router = useRouter()
   const { data: session, isPending } = useSession()
-  const [status, setStatus] = useState<"loading" | "login" | "accepting" | "success" | "error">("loading")
+  const [status, setStatus] = useState<"loading" | "login" | "accepting" | "success" | "error">(
+    "loading",
+  )
   const [error, setError] = useState("")
 
   useEffect(() => {
@@ -57,23 +59,23 @@ export default function AcceptInvitePage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="bg-background flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-sm text-center">
         <div className="mb-6 inline-flex items-center gap-2">
-          <BrandMark className="size-8 text-primary" />
+          <BrandMark className="text-primary size-8" />
           <span className="text-lg font-bold">Click Studio</span>
         </div>
 
         {status === "loading" && (
           <div className="flex justify-center">
-            <Loader2 className="size-5 animate-spin text-muted-foreground" />
+            <Loader2 className="text-muted-foreground size-5 animate-spin" />
           </div>
         )}
 
         {status === "login" && (
           <>
             <h1 className="mb-2 text-lg font-bold">Sign in to accept</h1>
-            <p className="mb-6 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mb-6 text-sm">
               You need to sign in before joining the organization.
             </p>
             <Button asChild>
@@ -86,22 +88,22 @@ export default function AcceptInvitePage() {
 
         {status === "accepting" && (
           <>
-            <Loader2 className="mx-auto mb-3 size-5 animate-spin text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Accepting invitation...</p>
+            <Loader2 className="text-muted-foreground mx-auto mb-3 size-5 animate-spin" />
+            <p className="text-muted-foreground text-sm">Accepting invitation...</p>
           </>
         )}
 
         {status === "success" && (
           <>
             <h1 className="mb-2 text-lg font-bold">You're in!</h1>
-            <p className="text-sm text-muted-foreground">Redirecting to dashboard...</p>
+            <p className="text-muted-foreground text-sm">Redirecting to dashboard...</p>
           </>
         )}
 
         {status === "error" && (
           <>
             <h1 className="mb-2 text-lg font-bold">Something went wrong</h1>
-            <p className="mb-6 text-sm text-muted-foreground">{error}</p>
+            <p className="text-muted-foreground mb-6 text-sm">{error}</p>
             <Button variant="outline" asChild>
               <Link href="/dashboard">Go to dashboard</Link>
             </Button>

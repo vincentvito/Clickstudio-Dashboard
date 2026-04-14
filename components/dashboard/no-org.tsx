@@ -14,15 +14,15 @@ export function NoOrganization() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="bg-background flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-sm text-center">
         <div className="mb-6 inline-flex items-center gap-2">
-          <BrandMark className="size-8 text-primary" />
+          <BrandMark className="text-primary size-8" />
           <span className="text-lg font-bold">Click Studio</span>
         </div>
 
         <h1 className="mb-2 text-lg font-bold">No organization</h1>
-        <p className="mb-6 text-sm text-muted-foreground">
+        <p className="text-muted-foreground mb-6 text-sm">
           You need an invitation to access Click Studio. Ask your team owner to invite you.
         </p>
 

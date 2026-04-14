@@ -24,19 +24,17 @@ export const ProjectCard = memo(function ProjectCard({
   return (
     <Link
       href={`/dashboard/${project.id}`}
-      className="group block rounded-lg border border-transparent px-4 py-3.5 transition-colors hover:bg-accent/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group hover:bg-accent/5 focus-visible:ring-ring block rounded-lg border border-transparent px-4 py-3.5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-center gap-2">
-            <h3 className="truncate text-sm font-semibold text-foreground">
-              {project.title}
-            </h3>
+            <h3 className="text-foreground truncate text-sm font-semibold">{project.title}</h3>
             <StatusBadge state={project.state} />
           </div>
 
           {project.brainDump && (
-            <p className="mb-2 line-clamp-2 max-w-xl text-[13px] leading-relaxed text-muted-foreground">
+            <p className="text-muted-foreground mb-2 line-clamp-2 max-w-xl text-[13px] leading-relaxed">
               {project.brainDump}
             </p>
           )}
@@ -45,16 +43,14 @@ export const ProjectCard = memo(function ProjectCard({
             {pct >= 0 ? (
               <div className="flex items-center gap-2">
                 <Progress value={pct} className="h-1 w-20" />
-                <span className="text-xs tabular-nums text-muted-foreground">
+                <span className="text-muted-foreground text-xs tabular-nums">
                   {done}/{tasks.length}
                 </span>
               </div>
             ) : (
-              <span className="text-xs text-muted-foreground/60">No tasks</span>
+              <span className="text-muted-foreground/60 text-xs">No tasks</span>
             )}
-            <span className="text-xs text-muted-foreground/40">
-              {relativeTime(lastActivity)}
-            </span>
+            <span className="text-muted-foreground/40 text-xs">{relativeTime(lastActivity)}</span>
           </div>
         </div>
       </div>

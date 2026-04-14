@@ -3,7 +3,7 @@
 import { useMemo } from "react"
 import useSWR, { mutate } from "swr"
 import { toast } from "sonner"
-import type { Project, Task, LogEntry, Note, UserSummary } from "./types"
+import type { Project, Task, LogEntry, Note, UserSummary, Notification } from "./types"
 
 const fetcher = (url: string) =>
   fetch(url).then((res) => {
@@ -19,10 +19,7 @@ type ProjectWithRelations = Project & {
 }
 
 export function useProjects() {
-  const { data, error, isLoading } = useSWR<ProjectWithRelations[]>(
-    "/api/projects",
-    fetcher,
-  )
+  const { data, error, isLoading } = useSWR<ProjectWithRelations[]>("/api/projects", fetcher)
 
   const projects = data ?? []
   const allTasks = useMemo(() => projects.flatMap((p) => p.tasks), [projects])
@@ -70,11 +67,9 @@ async function api(url: string, method: string, body?: unknown) {
 }
 
 function revalidateAll() {
-  mutate(
-    (key: string) => typeof key === "string" && key.startsWith("/api/"),
-    undefined,
-    { revalidate: true },
-  )
+  mutate((key: string) => typeof key === "string" && key.startsWith("/api/"), undefined, {
+    revalidate: true,
+  })
 }
 
 function revalidateProject(projectId?: string) {
@@ -167,9 +162,7 @@ export async function moveTask(id: string, columnId: string, projectId?: string)
         if (!current) return current
         return {
           ...current,
-          tasks: current.tasks.map((t: Task) =>
-            t.id === id ? { ...t, columnId } : t,
-          ),
+          tasks: current.tasks.map((t: Task) => (t.id === id ? { ...t, columnId } : t)),
         }
       },
       { revalidate: false },
@@ -211,14 +204,14 @@ export function useOrgMembers() {
 // ─── Notes ──────────────────────────────────────────────
 
 export function useNotes(projectId: string) {
-  const { data, isLoading } = useSWR<Note[]>(
-    `/api/projects/${projectId}/notes`,
-    fetcher,
-  )
+  const { data, isLoading } = useSWR<Note[]>(`/api/projects/${projectId}/notes`, fetcher)
   return { notes: data ?? [], isLoading }
 }
 
-export async function createNote(projectId: string, input: { title?: string; content?: string }): Promise<Note> {
+export async function createNote(
+  projectId: string,
+  input: { title?: string; content?: string },
+): Promise<Note> {
   try {
     const note = await api(`/api/projects/${projectId}/notes`, "POST", input)
     // Don't revalidate -- we immediately open the note for editing
@@ -249,5 +242,43 @@ export async function deleteNote(id: string) {
   } catch (e: any) {
     toast.error(e.message ?? "Failed to delete note")
     throw e
+  }
+}
+
+// ─── Notifications ──────────────────────────────────────
+
+interface NotificationsResponse {
+  notifications: Notification[]
+  unreadCount: number
+}
+
+export function useNotifications() {
+  const { data, isLoading } = useSWR<NotificationsResponse>(
+    "/api/notifications",
+    fetcher,
+    { refreshInterval: 30000 }, // poll every 30s
+  )
+  return {
+    notifications: data?.notifications ?? [],
+    unreadCount: data?.unreadCount ?? 0,
+    isLoading,
+  }
+}
+
+export async function markNotificationRead(id: string) {
+  try {
+    await api(`/api/notifications/${id}`, "PATCH")
+    mutate("/api/notifications")
+  } catch {
+    // silent
+  }
+}
+
+export async function markAllNotificationsRead() {
+  try {
+    await api("/api/notifications/mark-all-read", "POST")
+    mutate("/api/notifications")
+  } catch {
+    // silent
   }
 }

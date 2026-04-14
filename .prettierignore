@@ -1,0 +1,22 @@
+node_modules
+.next
+.vercel
+dist
+build
+out
+
+# Generated
+lib/generated
+prisma/migrations
+
+# Lock files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Reference only
+public/clickstudio-dashboard.tsx
+
+# Misc
+*.md
+.env*

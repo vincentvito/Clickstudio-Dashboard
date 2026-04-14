@@ -28,12 +28,7 @@ interface TaskEditDialogProps {
   onSave: (id: string, updates: Partial<Task> & { assigneeIds?: string[] }) => void
 }
 
-export function TaskEditDialog({
-  task,
-  open,
-  onOpenChange,
-  onSave,
-}: TaskEditDialogProps) {
+export function TaskEditDialog({ task, open, onOpenChange, onSave }: TaskEditDialogProps) {
   const [title, setTitle] = useState("")
   const [assigneeIds, setAssigneeIds] = useState<string[]>([])
   const { members } = useOrgMembers()
@@ -94,9 +89,9 @@ export function TaskEditDialog({
                     <>
                       <div className="flex -space-x-1.5">
                         {selectedMembers.slice(0, 3).map((m) => (
-                          <Avatar key={m.id} className="size-5 ring-1 ring-background">
+                          <Avatar key={m.id} className="ring-background size-5 ring-1">
                             {m.image && <AvatarImage src={m.image} />}
-                            <AvatarFallback className="text-[7px] bg-primary/10 text-primary">
+                            <AvatarFallback className="bg-primary/10 text-primary text-[7px]">
                               {(m.name?.[0] || m.email[0]).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
@@ -108,7 +103,7 @@ export function TaskEditDialog({
                     </>
                   ) : (
                     <>
-                      <Users className="size-4 text-muted-foreground" />
+                      <Users className="text-muted-foreground size-4" />
                       <span className="text-muted-foreground">Select assignees</span>
                     </>
                   )}
@@ -128,12 +123,12 @@ export function TaskEditDialog({
                       <div className="flex w-full items-center gap-2">
                         <Avatar className="size-5">
                           {m.image && <AvatarImage src={m.image} />}
-                          <AvatarFallback className="text-[7px] bg-primary/10 text-primary">
+                          <AvatarFallback className="bg-primary/10 text-primary text-[7px]">
                             {(m.name?.[0] || m.email[0]).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <span className="flex-1 truncate">{m.name || m.email.split("@")[0]}</span>
-                        {selected && <Check className="size-3.5 text-primary" />}
+                        {selected && <Check className="text-primary size-3.5" />}
                       </div>
                     </DropdownMenuItem>
                   )

@@ -51,3 +51,15 @@ export interface AppData {
   tasks: Task[]
   logs: LogEntry[]
 }
+
+export type NotificationType = "task_assigned" | "note_mention"
+
+export interface Notification {
+  id: string
+  type: NotificationType
+  message: string
+  link: string | null
+  isRead: boolean
+  createdAt: string
+  userId: string
+}

@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useState, useCallback, useEffect } from "react"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StatusBadge } from "@/components/dashboard/status-badge"
@@ -29,12 +29,25 @@ import Link from "next/link"
 export default function ProjectPage() {
   const params = useParams<{ projectId: string }>()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const { project, tasks, logs, isLoading } = useProject(params.projectId)
 
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState("tasks")
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") ?? "tasks")
+  const [focusTaskId, setFocusTaskId] = useState<string | null>(null)
+  const [focusNoteId, setFocusNoteId] = useState<string | null>(null)
+
+  // Pick up tab/task/note from URL params (notification deep-links)
+  useEffect(() => {
+    const tab = searchParams.get("tab")
+    const taskId = searchParams.get("task")
+    const noteId = searchParams.get("note")
+    if (tab) setActiveTab(tab)
+    if (taskId) setFocusTaskId(taskId)
+    if (noteId) setFocusNoteId(noteId)
+  }, [searchParams])
 
   const projectId = project?.id
 
@@ -57,9 +70,12 @@ export default function ProjectPage() {
     await deleteTask(id)
   }, [])
 
-  const handleMoveTask = useCallback(async (id: string, columnId: string) => {
-    await moveTask(id, columnId, projectId)
-  }, [projectId])
+  const handleMoveTask = useCallback(
+    async (id: string, columnId: string) => {
+      await moveTask(id, columnId, projectId)
+    },
+    [projectId],
+  )
 
   const handleAddLog = useCallback(
     async (text: string) => {
@@ -72,12 +88,12 @@ export default function ProjectPage() {
   if (isLoading) {
     return (
       <div className="flex h-full flex-col">
-        <div className="flex items-center gap-2 border-b border-border/50 px-4 py-3 sm:px-6">
+        <div className="border-border/50 flex items-center gap-2 border-b px-4 py-3 sm:px-6">
           <Skeleton className="h-4 w-16 rounded" />
           <span className="text-muted-foreground/30">/</span>
           <Skeleton className="h-4 w-32 rounded" />
         </div>
-        <div className="p-4 sm:p-6 space-y-4">
+        <div className="space-y-4 p-4 sm:p-6">
           <Skeleton className="h-6 w-48 rounded-md" />
           <div className="flex gap-3">
             {[1, 2, 3].map((i) => (
@@ -92,7 +108,7 @@ export default function ProjectPage() {
   if (!project) {
     return (
       <div className="flex flex-col items-center justify-center py-24">
-        <p className="mb-4 text-sm text-muted-foreground">Project not found</p>
+        <p className="text-muted-foreground mb-4 text-sm">Project not found</p>
         <Button variant="outline" size="sm" asChild>
           <Link href="/dashboard">Back to dashboard</Link>
         </Button>
@@ -119,18 +135,16 @@ export default function ProjectPage() {
   return (
     <div className="flex h-full flex-col">
       {/* Header bar */}
-      <div className="flex items-center justify-between border-b border-border/50 px-4 py-3 sm:px-6">
+      <div className="border-border/50 flex items-center justify-between border-b px-4 py-3 sm:px-6">
         <div className="flex min-w-0 items-center gap-2">
           <Link
             href="/dashboard"
-            className="shrink-0 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground shrink-0 text-xs transition-colors"
           >
             Projects
           </Link>
           <span className="text-muted-foreground/30">/</span>
-          <h1 className="truncate text-sm font-semibold text-foreground">
-            {project.title}
-          </h1>
+          <h1 className="text-foreground truncate text-sm font-semibold">{project.title}</h1>
           <StatusBadge state={project.state} className="shrink-0" />
         </div>
         <div className="flex shrink-0 gap-1.5">
@@ -155,35 +169,38 @@ export default function ProjectPage() {
 
       {/* Brain dump + links */}
       {(project.brainDump || links.length > 0) && (
-        <div className="border-b border-border/50 px-4 py-4 sm:px-6">
+        <div className="border-border/50 border-b px-4 py-4 sm:px-6">
           {project.brainDump && (
-            <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
               {project.brainDump}
             </p>
           )}
           {links.length > 0 && (
             <div className={project.brainDump ? "mt-3" : ""}>
-              <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <span className="text-muted-foreground mb-1.5 block text-[10px] font-semibold tracking-wide uppercase">
                 Links
               </span>
               <div className="flex flex-wrap gap-1.5">
-              {links.map((link, i) => {
-                const href = link.trim().startsWith("http")
-                  ? link.trim()
-                  : `https://${link.trim()}`
-                return (
-                  <a
-                    key={i}
-                    href={href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex max-w-[220px] items-center gap-1 truncate rounded border border-border/50 px-2 py-0.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    <ExternalLink className="size-2.5 shrink-0" />
-                    {link.trim().replace(/^https?:\/\//, "").slice(0, 35)}
-                  </a>
-                )
-              })}
+                {links.map((link, i) => {
+                  const href = link.trim().startsWith("http")
+                    ? link.trim()
+                    : `https://${link.trim()}`
+                  return (
+                    <a
+                      key={i}
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="border-border/50 text-muted-foreground hover:text-foreground inline-flex max-w-[220px] items-center gap-1 truncate rounded border px-2 py-0.5 text-[11px] transition-colors"
+                    >
+                      <ExternalLink className="size-2.5 shrink-0" />
+                      {link
+                        .trim()
+                        .replace(/^https?:\/\//, "")
+                        .slice(0, 35)}
+                    </a>
+                  )
+                })}
               </div>
             </div>
           )}
@@ -191,8 +208,12 @@ export default function ProjectPage() {
       )}
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 flex-col overflow-hidden">
-        <div className="border-b border-border/50 px-4 sm:px-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="flex flex-1 flex-col overflow-hidden"
+      >
+        <div className="border-border/50 border-b px-4 sm:px-6">
           <TabsList variant="line">
             <TabsTrigger value="tasks">
               Tasks
@@ -216,18 +237,23 @@ export default function ProjectPage() {
               onUpdateTask={handleUpdateTask}
               onDeleteTask={handleDeleteTask}
               onMoveTask={handleMoveTask}
+              focusTaskId={focusTaskId}
+              onFocusHandled={() => setFocusTaskId(null)}
             />
           ))}
         </TabsContent>
 
         <TabsContent value="notes" className="flex-1 overflow-auto p-4 sm:p-6">
-          <ProjectNotes projectId={project.id} />
+          <ProjectNotes
+            projectId={project.id}
+            focusNoteId={focusNoteId}
+            onFocusHandled={() => setFocusNoteId(null)}
+          />
         </TabsContent>
 
         <TabsContent value="log" className="flex-1 overflow-auto p-4 sm:p-6">
           <DailyLog logs={logs} onAdd={handleAddLog} />
         </TabsContent>
-
       </Tabs>
 
       <ProjectFormDialog

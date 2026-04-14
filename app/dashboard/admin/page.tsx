@@ -36,7 +36,12 @@ const ROLE_CONFIG = {
 
 function getInitial(user: { name?: string | null; email?: string | null }) {
   if (user.name) {
-    return user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    return user.name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2)
   }
   return user.email?.[0]?.toUpperCase() ?? "?"
 }
@@ -78,9 +83,7 @@ export default function SettingsPage() {
         query: { organizationId: org.id },
       })
       setMembers(data.data?.members ?? [])
-      setInvitations(
-        (data.data?.invitations ?? []).filter((i: any) => i.status === "pending"),
-      )
+      setInvitations((data.data?.invitations ?? []).filter((i: any) => i.status === "pending"))
     } catch {
       // ignore
     } finally {
@@ -195,7 +198,7 @@ export default function SettingsPage() {
 
   if (!org || loading) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8 space-y-4">
+      <div className="mx-auto max-w-2xl space-y-4 px-4 py-6 sm:px-6 sm:py-8">
         <Skeleton className="h-6 w-32" />
         <Skeleton className="h-10 w-full rounded-lg" />
         <Skeleton className="h-40 w-full rounded-lg" />
@@ -206,19 +209,19 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8">
       <h1 className="mb-1 text-lg font-bold tracking-tight">Admin</h1>
-      <p className="mb-6 text-sm text-muted-foreground">Manage members and roles for {org.name}</p>
+      <p className="text-muted-foreground mb-6 text-sm">Manage members and roles for {org.name}</p>
 
       {/* Profile */}
       <div className="mb-6">
         <h2 className="mb-3 text-sm font-semibold">Your profile</h2>
-        <div className="flex items-center gap-3 rounded-lg border border-border/50 px-4 py-3">
+        <div className="border-border/50 flex items-center gap-3 rounded-lg border px-4 py-3">
           <Avatar className="size-10">
             {session?.user?.image && <AvatarImage src={session.user.image} />}
-            <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+            <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
               {getInitial(session?.user ?? {})}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             {editingName ? (
               <div className="flex items-center gap-2">
                 <Input
@@ -233,7 +236,11 @@ export default function SettingsPage() {
                   autoFocus
                 />
                 <Button size="icon-xs" onClick={handleSaveName} disabled={savingName}>
-                  {savingName ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
+                  {savingName ? (
+                    <Loader2 className="size-3 animate-spin" />
+                  ) : (
+                    <Check className="size-3" />
+                  )}
                 </Button>
                 <Button size="icon-xs" variant="ghost" onClick={() => setEditingName(false)}>
                   <X className="size-3" />
@@ -246,11 +253,11 @@ export default function SettingsPage() {
                     setNameValue(session?.user?.name ?? "")
                     setEditingName(true)
                   }}
-                  className="text-sm font-medium text-foreground hover:underline"
+                  className="text-foreground text-sm font-medium hover:underline"
                 >
                   {session?.user?.name || "Add your name"}
                 </button>
-                <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
+                <p className="text-muted-foreground text-xs">{session?.user?.email}</p>
               </div>
             )}
           </div>
@@ -274,7 +281,12 @@ export default function SettingsPage() {
             />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" type="button" className="shrink-0 w-24 capitalize">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  className="w-24 shrink-0 capitalize"
+                >
                   {inviteRole}
                 </Button>
               </DropdownMenuTrigger>
@@ -288,7 +300,11 @@ export default function SettingsPage() {
               </DropdownMenuContent>
             </DropdownMenu>
             <Button type="submit" size="sm" className="shrink-0 gap-1.5" disabled={inviting}>
-              {inviting ? <Loader2 className="size-3.5 animate-spin" /> : <UserPlus className="size-3.5" />}
+              {inviting ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <UserPlus className="size-3.5" />
+              )}
               Invite
             </Button>
           </form>
@@ -300,20 +316,27 @@ export default function SettingsPage() {
         <div className="mb-6">
           <h2 className="mb-3 text-sm font-semibold">
             Pending invitations
-            <span className="ml-1.5 text-xs font-normal text-muted-foreground">{invitations.length}</span>
+            <span className="text-muted-foreground ml-1.5 text-xs font-normal">
+              {invitations.length}
+            </span>
           </h2>
           <div className="space-y-1">
             {invitations.map((inv: any) => (
-              <div key={inv.id} className="flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors hover:bg-accent/5">
+              <div
+                key={inv.id}
+                className="hover:bg-accent/5 flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors"
+              >
                 <div className="flex items-center gap-2.5">
-                  <div className="flex size-8 items-center justify-center rounded-full bg-muted">
-                    <Mail className="size-3.5 text-muted-foreground" />
+                  <div className="bg-muted flex size-8 items-center justify-center rounded-full">
+                    <Mail className="text-muted-foreground size-3.5" />
                   </div>
                   <div>
                     <span className="text-sm">{inv.email}</span>
                     <div className="flex items-center gap-1.5">
-                      <Badge variant="outline" className="text-[10px] capitalize">{inv.role ?? "member"}</Badge>
-                      <span className="text-[11px] text-muted-foreground">
+                      <Badge variant="outline" className="text-[10px] capitalize">
+                        {inv.role ?? "member"}
+                      </Badge>
+                      <span className="text-muted-foreground text-[11px]">
                         Expires {new Date(inv.expiresAt).toLocaleDateString()}
                       </span>
                     </div>
@@ -339,7 +362,7 @@ export default function SettingsPage() {
       <div>
         <h2 className="mb-3 text-sm font-semibold">
           Members
-          <span className="ml-1.5 text-xs font-normal text-muted-foreground">{members.length}</span>
+          <span className="text-muted-foreground ml-1.5 text-xs font-normal">{members.length}</span>
         </h2>
         <div className="space-y-1">
           {members.map((m: any) => {
@@ -351,11 +374,14 @@ export default function SettingsPage() {
             const initial = getInitial(m.user ?? {})
 
             return (
-              <div key={m.id} className="flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors hover:bg-accent/5">
+              <div
+                key={m.id}
+                className="hover:bg-accent/5 flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors"
+              >
                 <div className="flex items-center gap-3">
                   <Avatar className="size-8">
                     {m.user?.image && <AvatarImage src={m.user.image} />}
-                    <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                       {initial}
                     </AvatarFallback>
                   </Avatar>
@@ -363,14 +389,16 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm font-medium">{displayName}</span>
                       {isCurrentUser && (
-                        <span className="text-[11px] text-muted-foreground">(you)</span>
+                        <span className="text-muted-foreground text-[11px]">(you)</span>
                       )}
                     </div>
-                    <span className="text-xs text-muted-foreground">{m.user?.email}</span>
+                    <span className="text-muted-foreground text-xs">{m.user?.email}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`inline-flex items-center gap-1 text-xs font-medium ${role.color}`}>
+                  <span
+                    className={`inline-flex items-center gap-1 text-xs font-medium ${role.color}`}
+                  >
                     <RoleIcon className="size-3" />
                     {role.label}
                   </span>
@@ -410,7 +438,9 @@ export default function SettingsPage() {
 
       <ConfirmDialog
         open={removingMember !== null}
-        onOpenChange={(open) => { if (!open) setRemovingMember(null) }}
+        onOpenChange={(open) => {
+          if (!open) setRemovingMember(null)
+        }}
         title="Remove member"
         description={`Remove ${removingMember?.name} from ${org.name}? They will lose access to all projects.`}
         confirmLabel="Remove"

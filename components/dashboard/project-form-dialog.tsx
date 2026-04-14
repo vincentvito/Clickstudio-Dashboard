@@ -73,7 +73,7 @@ export function ProjectFormDialog({
 
         <form onSubmit={handleSubmit} className="mt-2 space-y-5">
           <div className="space-y-2.5">
-            <label htmlFor="title" className="text-sm font-medium text-foreground">
+            <label htmlFor="title" className="text-foreground text-sm font-medium">
               Title
             </label>
             <Input
@@ -86,7 +86,7 @@ export function ProjectFormDialog({
           </div>
 
           <div className="space-y-2.5">
-            <label className="text-sm font-medium text-foreground">Status</label>
+            <label className="text-foreground text-sm font-medium">Status</label>
             <div className="flex flex-wrap gap-2">
               {PROJECT_STATES.map((s) => {
                 const config = PROJECT_STATE_CONFIG[s]
@@ -110,7 +110,7 @@ export function ProjectFormDialog({
           </div>
 
           <div className="space-y-2.5">
-            <label htmlFor="braindump" className="text-sm font-medium text-foreground">
+            <label htmlFor="braindump" className="text-foreground text-sm font-medium">
               Brain dump
             </label>
             <Textarea
@@ -123,7 +123,7 @@ export function ProjectFormDialog({
           </div>
 
           <div className="space-y-2.5">
-            <label htmlFor="links" className="text-sm font-medium text-foreground">
+            <label htmlFor="links" className="text-foreground text-sm font-medium">
               Links <span className="text-muted-foreground">(one per line)</span>
             </label>
             <Textarea

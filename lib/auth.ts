@@ -1,15 +1,15 @@
-import { betterAuth } from 'better-auth'
-import { prismaAdapter } from 'better-auth/adapters/prisma'
-import { emailOTP } from 'better-auth/plugins'
-import { organization } from 'better-auth/plugins'
-import prisma from '@/lib/prisma'
-import { sendEmail } from '@/lib/email'
-import { ac, owner, admin, member } from '@/lib/permissions'
+import { betterAuth } from "better-auth"
+import { prismaAdapter } from "better-auth/adapters/prisma"
+import { emailOTP } from "better-auth/plugins"
+import { organization } from "better-auth/plugins"
+import prisma from "@/lib/prisma"
+import { sendEmail } from "@/lib/email"
+import { ac, owner, admin, member } from "@/lib/permissions"
 
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
   database: prismaAdapter(prisma, {
-    provider: 'postgresql',
+    provider: "postgresql",
   }),
   emailAndPassword: {
     enabled: false,
@@ -24,18 +24,18 @@ export const auth = betterAuth({
     emailOTP({
       async sendVerificationOTP({ email, otp, type }) {
         const subject =
-          type === 'sign-in'
-            ? 'Your Click Studio login code'
-            : type === 'email-verification'
-              ? 'Verify your Click Studio email'
-              : 'Reset your Click Studio password'
+          type === "sign-in"
+            ? "Your Click Studio login code"
+            : type === "email-verification"
+              ? "Verify your Click Studio email"
+              : "Reset your Click Studio password"
 
         const actionText =
-          type === 'sign-in'
-            ? 'Use this code to sign in to your account:'
-            : type === 'email-verification'
-              ? 'Use this code to verify your email address:'
-              : 'Use this code to reset your password:'
+          type === "sign-in"
+            ? "Use this code to sign in to your account:"
+            : type === "email-verification"
+              ? "Use this code to verify your email address:"
+              : "Use this code to reset your password:"
 
         const html = `
           <div style="font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: #09090b; padding: 0;">
@@ -88,11 +88,9 @@ export const auth = betterAuth({
       ac,
       roles: { owner, admin, member },
       allowUserToCreateOrganization: true,
-      creatorRole: 'owner',
+      creatorRole: "owner",
       invitationExpiresIn: 60 * 60 * 48, // 48 hours
     }),
   ],
-  trustedOrigins: [
-    process.env.BETTER_AUTH_URL || 'http://localhost:3000',
-  ],
+  trustedOrigins: [process.env.BETTER_AUTH_URL || "http://localhost:3000"],
 })

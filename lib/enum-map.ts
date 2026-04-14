@@ -2,22 +2,22 @@
 // Prisma enums use PascalCase internally, @map handles DB storage
 
 const STATE_TO_PRISMA: Record<string, string> = {
-  "Idea": "Idea",
+  Idea: "Idea",
   "In Build": "InBuild",
-  "Live": "Live",
-  "Paused": "Paused",
+  Live: "Live",
+  Paused: "Paused",
 }
 
 const STATE_FROM_PRISMA: Record<string, string> = {
-  "Idea": "Idea",
-  "InBuild": "In Build",
-  "Live": "Live",
-  "Paused": "Paused",
+  Idea: "Idea",
+  InBuild: "In Build",
+  Live: "Live",
+  Paused: "Paused",
 }
 
 const SECTION_TO_PRISMA: Record<string, string> = {
-  "Product": "Product",
-  "Marketing": "Marketing",
+  Product: "Product",
+  Marketing: "Marketing",
 }
 
 export function stateToPrisma(state: string): string {

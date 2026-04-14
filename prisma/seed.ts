@@ -44,7 +44,9 @@ async function main() {
   })
 
   if (existingMember) {
-    console.log(`User is already a member of "${existingMember.organization.name}" as ${existingMember.role}.`)
+    console.log(
+      `User is already a member of "${existingMember.organization.name}" as ${existingMember.role}.`,
+    )
     await pool.end()
     return
   }

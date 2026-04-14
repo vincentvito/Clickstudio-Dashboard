@@ -22,11 +22,7 @@ import {
 import { TaskEditDialog } from "./task-edit-dialog"
 import { ConfirmDialog } from "./confirm-dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,6 +49,8 @@ interface KanbanBoardProps {
   onUpdateTask: (id: string, updates: Partial<Task>) => void
   onDeleteTask: (id: string) => void
   onMoveTask: (id: string, columnId: string) => void
+  focusTaskId?: string | null
+  onFocusHandled?: () => void
 }
 
 export function KanbanBoard({
@@ -62,6 +60,8 @@ export function KanbanBoard({
   onUpdateTask,
   onDeleteTask,
   onMoveTask,
+  focusTaskId,
+  onFocusHandled,
 }: KanbanBoardProps) {
   const filtered = useMemo(() => tasks.filter((t) => t.section === section), [tasks, section])
   const sectionConfig = SECTION_CONFIG[section]
@@ -82,11 +82,30 @@ export function KanbanBoard({
     }
   }, [creatingIn])
 
+  // Auto-open task from notification deep link.
+  // We read `filtered` via ref to avoid re-running when the tasks array reference changes.
+  const filteredRef = useRef(filtered)
+  filteredRef.current = filtered
+  useEffect(() => {
+    if (!focusTaskId) return
+    const task = filteredRef.current.find((t) => t.id === focusTaskId)
+    if (task) {
+      setEditingTask(task)
+      onFocusHandled?.()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusTaskId])
+
   async function handleCreateSubmit() {
     if (!newTitle.trim() || !creatingIn) return
     setIsCreating(true)
     try {
-      await onAddTask(section, creatingIn, newTitle.trim(), newAssigneeIds.length > 0 ? newAssigneeIds : undefined)
+      await onAddTask(
+        section,
+        creatingIn,
+        newTitle.trim(),
+        newAssigneeIds.length > 0 ? newAssigneeIds : undefined,
+      )
     } finally {
       setIsCreating(false)
       setNewTitle("")
@@ -125,10 +144,7 @@ export function KanbanBoard({
     <div className="mb-6">
       <div className="mb-2">
         <span
-          className={cn(
-            "text-[11px] font-semibold uppercase tracking-wide",
-            sectionConfig.color,
-          )}
+          className={cn("text-[11px] font-semibold tracking-wide uppercase", sectionConfig.color)}
         >
           {section}
         </span>
@@ -150,15 +166,13 @@ export function KanbanBoard({
                   <KanbanBoardColumnTitle columnId={column.id}>
                     <KanbanColorCircle color={column.color} />
                     {column.name}
-                    <span className="ml-1.5 text-xs opacity-50">
-                      {columnTasks.length}
-                    </span>
+                    <span className="ml-1.5 text-xs opacity-50">{columnTasks.length}</span>
                   </KanbanBoardColumnTitle>
                 </KanbanBoardColumnHeader>
 
                 <KanbanBoardColumnList>
                   {columnTasks.length === 0 && creatingIn !== column.id && (
-                    <li className="px-3 py-6 text-center text-xs text-muted-foreground">
+                    <li className="text-muted-foreground px-3 py-6 text-center text-xs">
                       Drop tasks here
                     </li>
                   )}
@@ -168,10 +182,7 @@ export function KanbanBoard({
                       cardId={task.id}
                       onDropOverListItem={handleDrop(column.id)}
                     >
-                      <KanbanBoardCard
-                        data={{ id: task.id }}
-                        onClick={() => setEditingTask(task)}
-                      >
+                      <KanbanBoardCard data={{ id: task.id }} onClick={() => setEditingTask(task)}>
                         <KanbanBoardCardTitle className="whitespace-pre-wrap">
                           {task.title}
                         </KanbanBoardCardTitle>
@@ -182,9 +193,9 @@ export function KanbanBoard({
                               {task.assignees.slice(0, 3).map((a) => (
                                 <Tooltip key={a.id}>
                                   <TooltipTrigger asChild>
-                                    <Avatar className="size-5 ring-1 ring-background">
+                                    <Avatar className="ring-background size-5 ring-1">
                                       {a.image && <AvatarImage src={a.image} />}
-                                      <AvatarFallback className="bg-primary/10 text-[7px] font-semibold text-primary">
+                                      <AvatarFallback className="bg-primary/10 text-primary text-[7px] font-semibold">
                                         {(a.name?.[0] || a.email[0]).toUpperCase()}
                                       </AvatarFallback>
                                     </Avatar>
@@ -193,7 +204,7 @@ export function KanbanBoard({
                                 </Tooltip>
                               ))}
                             </div>
-                            <span className="truncate text-[11px] text-muted-foreground">
+                            <span className="text-muted-foreground truncate text-[11px]">
                               {task.assignees
                                 .slice(0, 2)
                                 .map((a) => a.name || a.email.split("@")[0])
@@ -232,15 +243,19 @@ export function KanbanBoard({
                       <div className="flex items-center justify-between">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="xs" className="gap-1 text-muted-foreground">
+                            <Button
+                              variant="ghost"
+                              size="xs"
+                              className="text-muted-foreground gap-1"
+                            >
                               {newAssigneeIds.length > 0 ? (
                                 <>
                                   <div className="flex -space-x-1">
                                     {newAssigneeIds.slice(0, 2).map((id) => {
                                       const m = members.find((m) => m.id === id)
                                       return (
-                                        <Avatar key={id} className="size-4 ring-1 ring-background">
-                                          <AvatarFallback className="bg-primary/10 text-[6px] text-primary">
+                                        <Avatar key={id} className="ring-background size-4 ring-1">
+                                          <AvatarFallback className="bg-primary/10 text-primary text-[6px]">
                                             {(m?.name?.[0] || m?.email?.[0] || "?").toUpperCase()}
                                           </AvatarFallback>
                                         </Avatar>
@@ -248,10 +263,12 @@ export function KanbanBoard({
                                     })}
                                   </div>
                                   <span className="truncate">
-                                    {newAssigneeIds.map((id) => {
-                                      const m = members.find((m) => m.id === id)
-                                      return m?.name || m?.email?.split("@")[0] || "?"
-                                    }).join(", ")}
+                                    {newAssigneeIds
+                                      .map((id) => {
+                                        const m = members.find((m) => m.id === id)
+                                        return m?.name || m?.email?.split("@")[0] || "?"
+                                      })
+                                      .join(", ")}
                                   </span>
                                 </>
                               ) : (
@@ -276,12 +293,14 @@ export function KanbanBoard({
                                   <div className="flex w-full items-center gap-2">
                                     <Avatar className="size-5">
                                       {m.image && <AvatarImage src={m.image} />}
-                                      <AvatarFallback className="text-[7px] bg-primary/10 text-primary">
+                                      <AvatarFallback className="bg-primary/10 text-primary text-[7px]">
                                         {(m.name?.[0] || m.email[0]).toUpperCase()}
                                       </AvatarFallback>
                                     </Avatar>
-                                    <span className="flex-1 truncate text-sm">{m.name || m.email.split("@")[0]}</span>
-                                    {selected && <Check className="size-3.5 text-primary" />}
+                                    <span className="flex-1 truncate text-sm">
+                                      {m.name || m.email.split("@")[0]}
+                                    </span>
+                                    {selected && <Check className="text-primary size-3.5" />}
                                   </div>
                                 </DropdownMenuItem>
                               )
@@ -321,13 +340,17 @@ export function KanbanBoard({
       <TaskEditDialog
         task={editingTask}
         open={editingTask !== null}
-        onOpenChange={(open) => { if (!open) setEditingTask(null) }}
+        onOpenChange={(open) => {
+          if (!open) setEditingTask(null)
+        }}
         onSave={onUpdateTask}
       />
 
       <ConfirmDialog
         open={deletingTask !== null}
-        onOpenChange={(open) => { if (!open) setDeletingTask(null) }}
+        onOpenChange={(open) => {
+          if (!open) setDeletingTask(null)
+        }}
         title="Delete task"
         description="This will permanently delete this task. This action cannot be undone."
         onConfirm={() => {

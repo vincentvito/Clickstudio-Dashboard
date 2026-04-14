@@ -40,23 +40,18 @@ export function DailyLog({ logs, onAdd }: DailyLogProps) {
       </div>
 
       {sorted.length === 0 && (
-        <p className="py-8 text-center text-sm text-muted-foreground">
+        <p className="text-muted-foreground py-8 text-center text-sm">
           No updates yet — post one above
         </p>
       )}
 
       <div className="space-y-1.5">
         {sorted.map((log) => (
-          <div
-            key={log.id}
-            className="flex gap-3 rounded-lg border border-border/50 bg-card p-3"
-          >
-            <div className="w-0.5 shrink-0 rounded-full bg-primary" />
+          <div key={log.id} className="border-border/50 bg-card flex gap-3 rounded-lg border p-3">
+            <div className="bg-primary w-0.5 shrink-0 rounded-full" />
             <div className="min-w-0 flex-1">
-              <p className="text-sm leading-relaxed text-foreground">{log.text}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                {formatDate(log.createdAt)}
-              </p>
+              <p className="text-foreground text-sm leading-relaxed">{log.text}</p>
+              <p className="text-muted-foreground mt-1 text-[11px]">{formatDate(log.createdAt)}</p>
             </div>
           </div>
         ))}

@@ -7,16 +7,13 @@ import { NoOrganization } from "@/components/dashboard/no-org"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ThemeToggle } from "@/components/dashboard/theme-toggle"
+import { NotificationsBell } from "@/components/dashboard/notifications-bell"
 import { useRouter } from "next/navigation"
 import { useSession, authClient } from "@/lib/auth-client"
 import { createProject } from "@/lib/store"
 import type { ProjectState } from "@/lib/types"
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: session, isPending: sessionPending } = useSession()
   const activeOrg = authClient.useActiveOrganization()
   const orgs = authClient.useListOrganizations()
@@ -35,9 +32,11 @@ export default function DashboardLayout({
   // Auto-set active org if user has one but none is active
   useEffect(() => {
     if (session && orgs.data && orgs.data.length > 0 && !activeOrg.data) {
-      authClient.organization.setActive({
-        organizationId: orgs.data[0].id,
-      }).then(() => setOrgChecked(true))
+      authClient.organization
+        .setActive({
+          organizationId: orgs.data[0].id,
+        })
+        .then(() => setOrgChecked(true))
     } else if (session && orgs.data) {
       setOrgChecked(true)
     }
@@ -61,12 +60,12 @@ export default function DashboardLayout({
   if (sessionPending || !orgChecked) {
     return (
       <div className="flex h-screen">
-        <div className="w-[260px] border-r border-sidebar-border p-4 space-y-3">
+        <div className="border-sidebar-border w-[260px] space-y-3 border-r p-4">
           <Skeleton className="h-8 w-full rounded-lg" />
           <Skeleton className="h-8 w-3/4 rounded-lg" />
           <Skeleton className="h-8 w-1/2 rounded-lg" />
         </div>
-        <div className="flex-1 p-6 space-y-4">
+        <div className="flex-1 space-y-4 p-6">
           <Skeleton className="h-6 w-48 rounded-md" />
           <Skeleton className="h-40 w-full rounded-lg" />
         </div>
@@ -86,18 +85,17 @@ export default function DashboardLayout({
     <SidebarProvider>
       <AppSidebar onNewProject={handleNewProject} />
       <SidebarInset>
-        <header className="flex h-12 shrink-0 items-center justify-between border-b border-sidebar-border px-4">
+        <header className="border-sidebar-border flex h-12 shrink-0 items-center justify-between border-b px-4">
           <SidebarTrigger className="-ml-1" />
-          <ThemeToggle />
+          <div className="flex items-center gap-1">
+            <NotificationsBell />
+            <ThemeToggle />
+          </div>
         </header>
         <main className="flex-1 overflow-auto">{children}</main>
       </SidebarInset>
 
-      <ProjectFormDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onSubmit={handleSubmit}
-      />
+      <ProjectFormDialog open={dialogOpen} onOpenChange={setDialogOpen} onSubmit={handleSubmit} />
     </SidebarProvider>
   )
 }

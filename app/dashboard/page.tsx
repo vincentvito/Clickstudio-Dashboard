@@ -29,10 +29,7 @@ export default function DashboardPage() {
   }, [logs])
 
   const sorted = useMemo(() => {
-    const filtered =
-      filter === "All"
-        ? projects
-        : projects.filter((p) => p.state === filter)
+    const filtered = filter === "All" ? projects : projects.filter((p) => p.state === filter)
 
     return [...filtered].sort((a, b) => {
       const la = latestLogByProject.get(b.id) ?? b.createdAt
@@ -52,7 +49,7 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8 space-y-4">
+      <div className="mx-auto max-w-4xl space-y-4 px-4 py-6 sm:px-6 sm:py-8">
         <div className="flex items-center justify-between">
           <Skeleton className="h-6 w-32 rounded-md" />
           <Skeleton className="h-8 w-28 rounded-md" />
@@ -75,7 +72,7 @@ export default function DashboardPage() {
     <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
       {/* Header */}
       <div className="mb-5 flex items-center justify-between">
-        <h1 className="text-lg font-bold tracking-tight text-foreground">Projects</h1>
+        <h1 className="text-foreground text-lg font-bold tracking-tight">Projects</h1>
         <Button size="sm" className="gap-1.5" onClick={() => setDialogOpen(true)}>
           <Plus className="size-3.5" />
           New project
@@ -93,7 +90,7 @@ export default function DashboardPage() {
               key={s}
               onClick={() => setFilter(s)}
               className={cn(
-                "rounded-md px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "focus-visible:ring-ring rounded-md px-2.5 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
                 isActive
                   ? config
                     ? cn(config.bg, config.color)
@@ -114,13 +111,13 @@ export default function DashboardPage() {
 
       {/* List */}
       {sorted.length === 0 ? (
-        <p className="py-20 text-center text-sm text-muted-foreground">
+        <p className="text-muted-foreground py-20 text-center text-sm">
           {filter === "All"
             ? "No projects yet — create one to get started"
             : `No ${filter.toLowerCase()} projects`}
         </p>
       ) : (
-        <div className="divide-y divide-border/40">
+        <div className="divide-border/40 divide-y">
           {sorted.map((project) => (
             <ProjectCard
               key={project.id}
@@ -132,11 +129,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <ProjectFormDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onSubmit={handleSubmit}
-      />
+      <ProjectFormDialog open={dialogOpen} onOpenChange={setDialogOpen} onSubmit={handleSubmit} />
     </div>
   )
 }

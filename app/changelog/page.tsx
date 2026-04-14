@@ -29,12 +29,12 @@ const typeConfig = {
 
 export default function ChangelogPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="bg-background text-foreground min-h-screen">
       {/* Nav */}
-      <nav className="border-b border-border/50 bg-background/70 backdrop-blur-xl">
+      <nav className="border-border/50 bg-background/70 border-b backdrop-blur-xl">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3 sm:px-6">
           <Link href="/" className="flex items-center gap-2">
-            <BrandMark className="size-6 text-primary" />
+            <BrandMark className="text-primary size-6" />
             <span className="text-sm font-bold">Clickstudio</span>
           </Link>
           <Button variant="ghost" size="sm" asChild>
@@ -52,28 +52,28 @@ export default function ChangelogPage() {
         </Button>
 
         <h1 className="mb-1 text-2xl font-bold tracking-tight">Changelog</h1>
-        <p className="mb-10 text-sm text-muted-foreground">
+        <p className="text-muted-foreground mb-10 text-sm">
           What&apos;s new in Clickstudio Control Center.
         </p>
 
         <div className="space-y-10">
           {changelog.map((release, i) => (
-            <article key={release.version} className="relative pl-6 border-l border-border/50">
-              <div className="absolute -left-1 top-1 size-2 rounded-full bg-primary" />
+            <article key={release.version} className="border-border/50 relative border-l pl-6">
+              <div className="bg-primary absolute top-1 -left-1 size-2 rounded-full" />
 
               <div className="mb-4 flex flex-wrap items-center gap-2">
                 <h2 className="text-sm font-bold">v{release.version}</h2>
                 {release.title && (
-                  <span className="text-sm text-muted-foreground">— {release.title}</span>
+                  <span className="text-muted-foreground text-sm">— {release.title}</span>
                 )}
                 {i === 0 && (
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                  <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px] font-semibold">
                     Latest
                   </span>
                 )}
               </div>
 
-              <time className="mb-4 block text-xs text-muted-foreground">
+              <time className="text-muted-foreground mb-4 block text-xs">
                 {new Date(release.date).toLocaleDateString("en-US", {
                   year: "numeric",
                   month: "long",
@@ -97,9 +97,9 @@ export default function ChangelogPage() {
                         {change.items.map((item, ii) => (
                           <li
                             key={ii}
-                            className="flex items-start gap-2 text-sm text-muted-foreground"
+                            className="text-muted-foreground flex items-start gap-2 text-sm"
                           >
-                            <span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" />
+                            <span className="bg-muted-foreground/40 mt-1.5 size-1 shrink-0 rounded-full" />
                             {item}
                           </li>
                         ))}
