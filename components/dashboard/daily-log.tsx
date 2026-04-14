@@ -3,21 +3,30 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import { formatDate } from "@/lib/format"
+import { Loader2 } from "lucide-react"
 import type { LogEntry } from "@/lib/types"
 
 interface DailyLogProps {
   logs: LogEntry[]
-  onAdd: (text: string) => void
+  onAdd: (text: string) => void | Promise<void>
+  isLoading?: boolean
 }
 
-export function DailyLog({ logs, onAdd }: DailyLogProps) {
+export function DailyLog({ logs, onAdd, isLoading }: DailyLogProps) {
   const [message, setMessage] = useState("")
+  const [posting, setPosting] = useState(false)
 
-  function submit() {
-    if (!message.trim()) return
-    onAdd(message.trim())
-    setMessage("")
+  async function submit() {
+    if (!message.trim() || posting) return
+    setPosting(true)
+    try {
+      await onAdd(message.trim())
+      setMessage("")
+    } finally {
+      setPosting(false)
+    }
   }
 
   const sorted = [...logs].sort(
@@ -33,29 +42,50 @@ export function DailyLog({ logs, onAdd }: DailyLogProps) {
           onKeyDown={(e) => e.key === "Enter" && submit()}
           placeholder="Quick update — what happened today?"
           className="text-sm"
+          disabled={posting}
         />
-        <Button onClick={submit} size="sm" className="shrink-0">
-          Post
+        <Button
+          onClick={submit}
+          size="sm"
+          className="shrink-0 gap-1.5"
+          disabled={posting || !message.trim()}
+        >
+          {posting ? (
+            <>
+              <Loader2 className="size-3.5 animate-spin" />
+              Posting
+            </>
+          ) : (
+            "Post"
+          )}
         </Button>
       </div>
 
-      {sorted.length === 0 && (
+      {isLoading ? (
+        <div className="space-y-1.5">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-14 w-full rounded-lg" />
+          ))}
+        </div>
+      ) : sorted.length === 0 ? (
         <p className="text-muted-foreground py-8 text-center text-sm">
           No updates yet — post one above
         </p>
-      )}
-
-      <div className="space-y-1.5">
-        {sorted.map((log) => (
-          <div key={log.id} className="border-border/50 bg-card flex gap-3 rounded-lg border p-3">
-            <div className="bg-primary w-0.5 shrink-0 rounded-full" />
-            <div className="min-w-0 flex-1">
-              <p className="text-foreground text-sm leading-relaxed">{log.text}</p>
-              <p className="text-muted-foreground mt-1 text-[11px]">{formatDate(log.createdAt)}</p>
+      ) : (
+        <div className="space-y-1.5">
+          {sorted.map((log) => (
+            <div key={log.id} className="border-border/50 bg-card flex gap-3 rounded-lg border p-3">
+              <div className="bg-primary w-0.5 shrink-0 rounded-full" />
+              <div className="min-w-0 flex-1">
+                <p className="text-foreground text-sm leading-relaxed">{log.text}</p>
+                <p className="text-muted-foreground mt-1 text-[11px]">
+                  {formatDate(log.createdAt)}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
