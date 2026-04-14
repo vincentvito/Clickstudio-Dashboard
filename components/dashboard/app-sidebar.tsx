@@ -26,11 +26,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { useProjects } from "@/lib/store"
+import { useProjects, useOrgMembers } from "@/lib/store"
 import { useSession, signOut } from "@/lib/auth-client"
 import { PROJECT_STATE_CONFIG } from "@/lib/constants"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Plus, LogOut, ChevronsUpDown, Settings, Wrench } from "lucide-react"
+import { LayoutDashboard, Plus, LogOut, ChevronsUpDown, Wrench, Users } from "lucide-react"
 import { BrandMark } from "@/components/brand-mark"
 import { APP_VERSION } from "@/lib/changelog"
 
@@ -40,6 +40,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 
 export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
   const { projects } = useProjects()
+  const { members } = useOrgMembers()
   const { data: session } = useSession()
   const pathname = usePathname()
   const router = useRouter()
@@ -48,6 +49,8 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : user?.email?.[0]?.toUpperCase() ?? "?"
+  const currentMember = members.find((m) => m.id === user?.id)
+  const isOwnerOrAdmin = currentMember?.role === "owner" || currentMember?.role === "admin"
 
   async function handleSignOut() {
     await signOut()
@@ -166,6 +169,20 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
 
       <SidebarFooter>
         <SidebarMenu>
+          {isOwnerOrAdmin && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === "/dashboard/admin"}
+                tooltip="Admin"
+              >
+                <Link href="/dashboard/admin">
+                  <Users />
+                  <span>Admin</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           {/* User menu */}
           <SidebarMenuItem>
             <DropdownMenu>
@@ -218,12 +235,6 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
                   <Link href="/changelog" className="gap-2">
                     <span className="text-xs text-muted-foreground">v{APP_VERSION}</span>
                     <span>Changelog</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/settings" className="gap-2">
-                    <Settings className="size-4" />
-                    Settings
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

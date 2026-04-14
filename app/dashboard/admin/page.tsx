@@ -205,8 +205,8 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8">
-      <h1 className="mb-1 text-lg font-bold tracking-tight">Settings</h1>
-      <p className="mb-6 text-sm text-muted-foreground">{org.name}</p>
+      <h1 className="mb-1 text-lg font-bold tracking-tight">Admin</h1>
+      <p className="mb-6 text-sm text-muted-foreground">Manage members and roles for {org.name}</p>
 
       {/* Profile */}
       <div className="mb-6">
