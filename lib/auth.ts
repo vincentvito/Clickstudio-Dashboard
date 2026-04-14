@@ -30,20 +30,52 @@ export const auth = betterAuth({
               ? 'Verify your Click Studio email'
               : 'Reset your Click Studio password'
 
+        const actionText =
+          type === 'sign-in'
+            ? 'Use this code to sign in to your account:'
+            : type === 'email-verification'
+              ? 'Use this code to verify your email address:'
+              : 'Use this code to reset your password:'
+
         const html = `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
-            <h2 style="font-size: 20px; font-weight: 700; color: #111; margin-bottom: 8px;">
-              Click Studio Control Center
-            </h2>
-            <p style="font-size: 14px; color: #666; margin-bottom: 24px;">
-              ${type === 'sign-in' ? 'Enter this code to sign in:' : type === 'email-verification' ? 'Enter this code to verify your email:' : 'Enter this code to reset your password:'}
-            </p>
-            <div style="font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #111; background: #f5f5f5; padding: 16px 24px; border-radius: 8px; text-align: center; margin-bottom: 24px;">
-              ${otp}
+          <div style="font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: #09090b; padding: 0;">
+            <div style="max-width: 520px; margin: 0 auto; padding: 48px 24px;">
+
+              <!-- Header -->
+              <div style="margin-bottom: 32px;">
+                <h1 style="font-size: 18px; font-weight: 700; color: #fafafa; margin: 0 0 4px 0; letter-spacing: -0.025em;">
+                  Click Studio
+                </h1>
+                <p style="font-size: 13px; color: #71717a; margin: 0;">Control Center</p>
+              </div>
+
+              <!-- Body -->
+              <p style="font-size: 14px; color: #a1a1aa; line-height: 1.6; margin: 0 0 24px 0;">
+                ${actionText}
+              </p>
+
+              <!-- OTP Code -->
+              <div style="background-color: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
+                <div style="font-size: 36px; font-weight: 700; letter-spacing: 12px; color: #fafafa; font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;">
+                  ${otp}
+                </div>
+              </div>
+
+              <!-- Footer -->
+              <p style="font-size: 13px; color: #52525b; line-height: 1.5; margin: 0 0 8px 0;">
+                This code expires in <strong style="color: #71717a;">5 minutes</strong>.
+              </p>
+              <p style="font-size: 13px; color: #3f3f46; line-height: 1.5; margin: 0;">
+                If you didn't request this code, you can safely ignore this email.
+              </p>
+
+              <!-- Divider -->
+              <div style="height: 1px; background-color: #27272a; margin: 32px 0;"></div>
+
+              <p style="font-size: 11px; color: #3f3f46; margin: 0;">
+                Click Studio Control Center &mdash; Project management for creative teams
+              </p>
             </div>
-            <p style="font-size: 13px; color: #999;">
-              This code expires in 5 minutes. If you didn't request this, you can safely ignore this email.
-            </p>
           </div>
         `
 
