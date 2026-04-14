@@ -158,11 +158,30 @@ export async function deleteTask(id: string) {
   }
 }
 
-export async function moveTask(id: string, columnId: string) {
+export async function moveTask(id: string, columnId: string, projectId?: string) {
+  // Optimistic update: immediately patch the cache before the API call
+  if (projectId) {
+    mutate(
+      `/api/projects/${projectId}`,
+      (current: any) => {
+        if (!current) return current
+        return {
+          ...current,
+          tasks: current.tasks.map((t: Task) =>
+            t.id === id ? { ...t, columnId } : t,
+          ),
+        }
+      },
+      { revalidate: false },
+    )
+  }
+
   try {
     const updated = await api(`/api/tasks/${id}`, "PATCH", { columnId })
     revalidateProject(updated.projectId)
   } catch (e: any) {
+    // Rollback by revalidating
+    if (projectId) revalidateProject(projectId)
     toast.error(e.message ?? "Failed to move task")
     throw e
   }

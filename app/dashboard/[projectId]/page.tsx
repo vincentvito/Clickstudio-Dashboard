@@ -58,8 +58,8 @@ export default function ProjectPage() {
   }, [])
 
   const handleMoveTask = useCallback(async (id: string, columnId: string) => {
-    await moveTask(id, columnId)
-  }, [])
+    await moveTask(id, columnId, projectId)
+  }, [projectId])
 
   const handleAddLog = useCallback(
     async (text: string) => {
@@ -162,7 +162,11 @@ export default function ProjectPage() {
             </p>
           )}
           {links.length > 0 && (
-            <div className={`flex flex-wrap gap-1.5 ${project.brainDump ? "mt-2" : ""}`}>
+            <div className={project.brainDump ? "mt-3" : ""}>
+              <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Links
+              </span>
+              <div className="flex flex-wrap gap-1.5">
               {links.map((link, i) => {
                 const href = link.trim().startsWith("http")
                   ? link.trim()
@@ -180,6 +184,7 @@ export default function ProjectPage() {
                   </a>
                 )
               })}
+              </div>
             </div>
           )}
         </div>
