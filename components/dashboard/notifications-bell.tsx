@@ -1,14 +1,19 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { Bell, CheckCheck } from "lucide-react"
+import { Bell, CheckCheck, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useNotifications, markNotificationRead, markAllNotificationsRead } from "@/lib/store"
+import {
+  useNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  clearAllNotifications,
+} from "@/lib/store"
 import { relativeTime } from "@/lib/format"
 import type { Notification } from "@/lib/types"
 
@@ -53,15 +58,26 @@ export function NotificationsBell() {
               </span>
             )}
           </span>
-          {unreadCount > 0 && (
-            <button
-              onClick={() => markAllNotificationsRead()}
-              className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-[11px] transition-colors"
-            >
-              <CheckCheck className="size-3" />
-              Mark all read
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {unreadCount > 0 && (
+              <button
+                onClick={() => markAllNotificationsRead()}
+                className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-[11px] transition-colors"
+              >
+                <CheckCheck className="size-3" />
+                Mark all read
+              </button>
+            )}
+            {notifications.length > 0 && (
+              <button
+                onClick={() => clearAllNotifications()}
+                className="text-muted-foreground hover:text-destructive inline-flex items-center gap-1 text-[11px] transition-colors"
+              >
+                <Trash2 className="size-3" />
+                Clear all
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="max-h-80 overflow-y-auto">

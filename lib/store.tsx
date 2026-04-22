@@ -282,3 +282,12 @@ export async function markAllNotificationsRead() {
     // silent
   }
 }
+
+export async function clearAllNotifications() {
+  try {
+    await api("/api/notifications/clear-all", "POST")
+    mutate("/api/notifications")
+  } catch {
+    toast.error("Failed to clear notifications")
+  }
+}

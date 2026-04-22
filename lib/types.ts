@@ -24,6 +24,7 @@ export interface Task {
   projectId: string
   section: TaskSection
   title: string
+  description: string
   columnId: string
   assignees: UserSummary[]
 }
@@ -52,7 +53,11 @@ export interface AppData {
   logs: LogEntry[]
 }
 
-export type NotificationType = "task_assigned" | "note_mention"
+export type NotificationType =
+  | "task_assigned"
+  | "note_mention"
+  | "task_mention"
+  | "log_mention"
 
 export interface Notification {
   id: string

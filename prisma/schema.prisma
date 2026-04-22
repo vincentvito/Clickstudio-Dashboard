@@ -156,11 +156,12 @@ model Project {
 }
 
 model Task {
-  id       String      @id @default(cuid())
-  title    String
-  columnId String      @default("todo")
-  section  TaskSection @default(Product)
-  position Int         @default(0)
+  id          String      @id @default(cuid())
+  title       String
+  description String      @default("")
+  columnId    String      @default("todo")
+  section     TaskSection @default(Product)
+  position    Int         @default(0)
 
   assignees User[] @relation("TaskAssignees")
 
@@ -189,7 +190,7 @@ model LogEntry {
 
 model Notification {
   id        String   @id @default(cuid())
-  type      String   // "task_assigned" | "note_mention"
+  type      String   // "task_assigned" | "note_mention" | "task_mention" | "log_mention"
   message   String
   link      String?
   isRead    Boolean  @default(false)

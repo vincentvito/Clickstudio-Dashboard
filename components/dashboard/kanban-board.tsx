@@ -21,6 +21,7 @@ import {
 } from "@/components/kanban"
 import { TaskEditDialog } from "./task-edit-dialog"
 import { ConfirmDialog } from "./confirm-dialog"
+import { MentionRenderer } from "./mention-renderer"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -186,6 +187,12 @@ export function KanbanBoard({
                         <KanbanBoardCardTitle className="whitespace-pre-wrap">
                           {task.title}
                         </KanbanBoardCardTitle>
+
+                        {task.description && (
+                          <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed">
+                            <MentionRenderer content={task.description} />
+                          </p>
+                        )}
 
                         {task.assignees?.length > 0 && (
                           <div className="mt-1 flex items-center gap-1.5">

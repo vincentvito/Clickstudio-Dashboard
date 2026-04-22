@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useOrgMembers } from "@/lib/store"
 import type { Task } from "@/lib/types"
-import { UserCircle, Check, Users } from "lucide-react"
+import { Check, Users } from "lucide-react"
+import { TiptapEditor } from "./tiptap-editor"
 
 interface TaskEditDialogProps {
   task: Task | null
@@ -30,12 +31,14 @@ interface TaskEditDialogProps {
 
 export function TaskEditDialog({ task, open, onOpenChange, onSave }: TaskEditDialogProps) {
   const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
   const [assigneeIds, setAssigneeIds] = useState<string[]>([])
   const { members } = useOrgMembers()
 
   useEffect(() => {
     if (task) {
       setTitle(task.title)
+      setDescription(task.description ?? "")
       setAssigneeIds(task.assignees?.map((a) => a.id) ?? [])
     }
   }, [task, open])
@@ -51,7 +54,7 @@ export function TaskEditDialog({ task, open, onOpenChange, onSave }: TaskEditDia
   function handleSave(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) return
-    onSave(task!.id, { title: title.trim(), assigneeIds })
+    onSave(task!.id, { title: title.trim(), description, assigneeIds })
     onOpenChange(false)
   }
 
@@ -77,8 +80,19 @@ export function TaskEditDialog({ task, open, onOpenChange, onSave }: TaskEditDia
             }}
             placeholder="Task title..."
             autoFocus
-            rows={3}
+            rows={2}
           />
+
+          <div
+            key={task.id}
+            className="border-input bg-background focus-within:ring-ring max-h-64 min-h-20 overflow-y-auto rounded-md border px-3 py-2 text-sm focus-within:ring-1"
+          >
+            <TiptapEditor
+              value={description}
+              onChange={setDescription}
+              placeholder="Add a description... Use @ to mention teammates."
+            />
+          </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium">Assignees</label>

@@ -2,11 +2,12 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatDate } from "@/lib/format"
 import { Loader2 } from "lucide-react"
 import type { LogEntry } from "@/lib/types"
+import { MentionInput } from "./mention-input"
+import { MentionRenderer } from "./mention-renderer"
 
 interface DailyLogProps {
   logs: LogEntry[]
@@ -36,11 +37,11 @@ export function DailyLog({ logs, onAdd, isLoading }: DailyLogProps) {
   return (
     <div>
       <div className="mb-4 flex gap-2">
-        <Input
+        <MentionInput
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && submit()}
-          placeholder="Quick update — what happened today?"
+          onChange={setMessage}
+          onSubmit={submit}
+          placeholder="Quick update — use @ to mention teammates"
           className="text-sm"
           disabled={posting}
         />
@@ -77,7 +78,9 @@ export function DailyLog({ logs, onAdd, isLoading }: DailyLogProps) {
             <div key={log.id} className="border-border/50 bg-card flex gap-3 rounded-lg border p-3">
               <div className="bg-primary w-0.5 shrink-0 rounded-full" />
               <div className="min-w-0 flex-1">
-                <p className="text-foreground text-sm leading-relaxed">{log.text}</p>
+                <p className="text-foreground text-sm leading-relaxed">
+                  <MentionRenderer content={log.text} />
+                </p>
                 <p className="text-muted-foreground mt-1 text-[11px]">
                   {formatDate(log.createdAt)}
                 </p>
