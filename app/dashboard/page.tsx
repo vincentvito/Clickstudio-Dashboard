@@ -4,6 +4,7 @@ import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { ProjectCard } from "@/components/dashboard/project-card"
 import { ProjectFormDialog } from "@/components/dashboard/project-form-dialog"
+import { ProjectStatsStrip } from "@/components/dashboard/project-stats-strip"
 import { useProjects, createProject } from "@/lib/store"
 import { PROJECT_STATES, PROJECT_STATE_CONFIG } from "@/lib/constants"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -78,6 +79,9 @@ export default function DashboardPage() {
           New project
         </Button>
       </div>
+
+      {/* Stats */}
+      <ProjectStatsStrip />
 
       {/* Filters */}
       <div className="mb-5 flex flex-wrap gap-1">

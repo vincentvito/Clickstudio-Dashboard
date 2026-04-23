@@ -32,34 +32,50 @@ export async function POST(
 
   const descriptionValue = typeof description === "string" ? description : ""
 
-  const maxPosition = await prisma.task.aggregate({
-    where: { projectId, columnId: columnId ?? "todo" },
-    _max: { position: true },
-  })
+  const [maxPosition, validMembers] = await Promise.all([
+    prisma.task.aggregate({
+      where: { projectId, columnId: columnId ?? "todo" },
+      _max: { position: true },
+    }),
+    assigneeIds?.length
+      ? prisma.member.findMany({
+          where: { organizationId: org.organizationId, userId: { in: assigneeIds } },
+          select: { userId: true },
+        })
+      : Promise.resolve(null),
+  ])
 
-  let validAssigneeIds: string[] = [org.user.id]
-  if (assigneeIds?.length) {
-    const validMembers = await prisma.member.findMany({
-      where: { organizationId: org.organizationId, userId: { in: assigneeIds } },
-      select: { userId: true },
-    })
-    validAssigneeIds = validMembers.map((m) => m.userId)
-  }
+  const validAssigneeIds: string[] = validMembers
+    ? validMembers.map((m) => m.userId)
+    : [org.user.id]
   const connectAssignees = { connect: validAssigneeIds.map((id) => ({ id })) }
 
-  const task = await prisma.task.create({
-    data: {
-      title: title.trim(),
-      description: descriptionValue,
-      columnId: columnId ?? "todo",
-      section: section ?? "Product",
-      position: (maxPosition._max.position ?? -1) + 1,
-      projectId,
-      assignees: connectAssignees,
-    },
-    include: {
-      assignees: { select: ASSIGNEE_SELECT },
-    },
+  const initialColumnId = columnId ?? "todo"
+
+  const task = await prisma.$transaction(async (tx) => {
+    const created = await tx.task.create({
+      data: {
+        title: title.trim(),
+        description: descriptionValue,
+        columnId: initialColumnId,
+        section: section ?? "Product",
+        position: (maxPosition._max.position ?? -1) + 1,
+        projectId,
+        assignees: connectAssignees,
+      },
+      include: {
+        assignees: { select: ASSIGNEE_SELECT },
+      },
+    })
+    await tx.taskTransition.create({
+      data: {
+        taskId: created.id,
+        fromColumnId: null,
+        toColumnId: initialColumnId,
+        userId: org.user.id,
+      },
+    })
+    return created
   })
 
   const inviterName = org.user.name || org.user.email

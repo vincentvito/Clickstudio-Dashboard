@@ -41,15 +41,28 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Title is required" }, { status: 400 })
   }
 
-  const project = await prisma.project.create({
-    data: {
-      title: title.trim(),
-      brainDump: brainDump ?? "",
-      artifactLinks: artifactLinks ?? "",
-      state: stateToPrisma(state ?? "Idea") as any,
-      organizationId: org.organizationId,
-      userId: org.user.id,
-    },
+  const initialState = stateToPrisma(state ?? "Idea") as any
+
+  const project = await prisma.$transaction(async (tx) => {
+    const created = await tx.project.create({
+      data: {
+        title: title.trim(),
+        brainDump: brainDump ?? "",
+        artifactLinks: artifactLinks ?? "",
+        state: initialState,
+        organizationId: org.organizationId,
+        userId: org.user.id,
+      },
+    })
+    await tx.projectStateTransition.create({
+      data: {
+        projectId: created.id,
+        fromState: null,
+        toState: initialState,
+        userId: org.user.id,
+      },
+    })
+    return created
   })
 
   return Response.json({ ...project, state: stateFromPrisma(project.state) }, { status: 201 })

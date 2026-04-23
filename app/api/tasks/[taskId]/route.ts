@@ -39,19 +39,35 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ta
     newAssigneeIds = validIds.filter((id) => !existingIds.has(id))
   }
 
-  const updated = await prisma.task.update({
-    where: { id: taskId },
-    data: {
-      ...(body.title !== undefined && { title: body.title }),
-      ...(body.description !== undefined && { description: body.description }),
-      ...(body.columnId !== undefined && { columnId: body.columnId }),
-      ...(body.section !== undefined && { section: body.section }),
-      ...(body.position !== undefined && { position: body.position }),
-      ...assigneesUpdate,
-    },
-    include: {
-      assignees: { select: ASSIGNEE_SELECT },
-    },
+  const columnChanged =
+    body.columnId !== undefined && body.columnId !== task.columnId
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const result = await tx.task.update({
+      where: { id: taskId },
+      data: {
+        ...(body.title !== undefined && { title: body.title }),
+        ...(body.description !== undefined && { description: body.description }),
+        ...(body.columnId !== undefined && { columnId: body.columnId }),
+        ...(body.section !== undefined && { section: body.section }),
+        ...(body.position !== undefined && { position: body.position }),
+        ...assigneesUpdate,
+      },
+      include: {
+        assignees: { select: ASSIGNEE_SELECT },
+      },
+    })
+    if (columnChanged) {
+      await tx.taskTransition.create({
+        data: {
+          taskId: result.id,
+          fromColumnId: task.columnId,
+          toColumnId: body.columnId,
+          userId: org.user.id,
+        },
+      })
+    }
+    return result
   })
 
   const inviterName = org.user.name || org.user.email

@@ -21,10 +21,12 @@ model User {
   accounts      Account[]
   members       Member[]
   invitations   Invitation[] @relation("InviterInvitations")
-  projects      Project[]
-  assignedTasks Task[]       @relation("TaskAssignees")
-  notes         Note[]
-  notifications Notification[]
+  projects             Project[]
+  assignedTasks        Task[]                   @relation("TaskAssignees")
+  notes                Note[]
+  notifications        Notification[]
+  stateTransitions     ProjectStateTransition[]
+  taskTransitions      TaskTransition[]
 
   @@unique([email])
   @@map("user")
@@ -146,13 +148,32 @@ model Project {
   userId String
   user   User   @relation(fields: [userId], references: [id])
 
-  tasks Task[]
-  logs  LogEntry[]
-  notes Note[]
+  tasks       Task[]
+  logs        LogEntry[]
+  notes       Note[]
+  transitions ProjectStateTransition[]
 
   @@index([organizationId])
   @@index([userId])
   @@map("project")
+}
+
+model ProjectStateTransition {
+  id        String        @id @default(cuid())
+  projectId String
+  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // null fromState = project creation
+  fromState ProjectState?
+  toState   ProjectState
+  at        DateTime      @default(now())
+
+  // nullable so agent-initiated transitions or backfills can omit an actor
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, at])
+  @@map("project_state_transition")
 }
 
 model Task {
@@ -171,8 +192,27 @@ model Task {
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
+  transitions TaskTransition[]
+
   @@index([projectId])
   @@map("task")
+}
+
+model TaskTransition {
+  id     String @id @default(cuid())
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  // null fromColumnId = task creation
+  fromColumnId String?
+  toColumnId   String
+  at           DateTime @default(now())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([taskId, at])
+  @@map("task_transition")
 }
 
 model LogEntry {

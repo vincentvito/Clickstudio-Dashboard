@@ -55,14 +55,31 @@ export async function PATCH(
     return Response.json({ error: "Not found" }, { status: 404 })
   }
 
-  const updated = await prisma.project.update({
-    where: { id: projectId },
-    data: {
-      ...(body.title !== undefined && { title: body.title }),
-      ...(body.brainDump !== undefined && { brainDump: body.brainDump }),
-      ...(body.artifactLinks !== undefined && { artifactLinks: body.artifactLinks }),
-      ...(body.state !== undefined && { state: stateToPrisma(body.state) as any }),
-    },
+  const nextState =
+    body.state !== undefined ? (stateToPrisma(body.state) as any) : undefined
+  const stateChanged = nextState !== undefined && nextState !== project.state
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const result = await tx.project.update({
+      where: { id: projectId },
+      data: {
+        ...(body.title !== undefined && { title: body.title }),
+        ...(body.brainDump !== undefined && { brainDump: body.brainDump }),
+        ...(body.artifactLinks !== undefined && { artifactLinks: body.artifactLinks }),
+        ...(nextState !== undefined && { state: nextState }),
+      },
+    })
+    if (stateChanged) {
+      await tx.projectStateTransition.create({
+        data: {
+          projectId: result.id,
+          fromState: project.state,
+          toState: nextState,
+          userId: org.user.id,
+        },
+      })
+    }
+    return result
   })
 
   return Response.json({ ...updated, state: stateFromPrisma(updated.state) })

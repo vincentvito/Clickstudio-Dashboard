@@ -34,6 +34,54 @@ export function useProjects() {
   }
 }
 
+// ─── Project timeline ───────────────────────────────────
+
+export type TimelineEntry =
+  | {
+      id: string
+      kind: "project_state"
+      at: string
+      user: UserSummary | null
+      fromState: string | null
+      toState: string
+    }
+  | {
+      id: string
+      kind: "task_column"
+      at: string
+      user: UserSummary | null
+      taskId: string
+      taskTitle: string
+      fromColumnId: string | null
+      toColumnId: string
+    }
+
+export function useProjectTimeline(projectId: string, enabled = true) {
+  const { data, isLoading } = useSWR<{ entries: TimelineEntry[] }>(
+    enabled ? `/api/projects/${projectId}/timeline` : null,
+    fetcher,
+  )
+  return { entries: data?.entries ?? [], isLoading }
+}
+
+// ─── Project stats ──────────────────────────────────────
+
+export interface ProjectStats {
+  avgTimeToLiveMs: number | null
+  avgTimeInIdeaMs: number | null
+  avgTimeInBuildMs: number | null
+  liveCount: number
+  totalCount: number
+}
+
+export function useProjectStats() {
+  const { data, isLoading, error } = useSWR<ProjectStats>(
+    "/api/projects/stats",
+    fetcher,
+  )
+  return { stats: data ?? null, isLoading, error }
+}
+
 // ─── Single project ─────────────────────────────────────
 
 export function useProject(projectId: string) {

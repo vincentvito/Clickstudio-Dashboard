@@ -7,7 +7,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StatusBadge } from "@/components/dashboard/status-badge"
 import { KanbanBoard } from "@/components/dashboard/kanban-board"
 import { DailyLog } from "@/components/dashboard/daily-log"
+import dynamic from "next/dynamic"
 import { ProjectNotes } from "@/components/dashboard/project-notes"
+
+const ProjectTimeline = dynamic(
+  () =>
+    import("@/components/dashboard/project-timeline").then(
+      (m) => m.ProjectTimeline,
+    ),
+  { ssr: false },
+)
 import { ProjectFormDialog } from "@/components/dashboard/project-form-dialog"
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog"
 import {
@@ -224,6 +233,7 @@ export default function ProjectPage() {
               Log
               <span className="ml-1 tabular-nums opacity-40">{logs.length}</span>
             </TabsTrigger>
+            <TabsTrigger value="timeline">Timeline</TabsTrigger>
           </TabsList>
         </div>
 
@@ -253,6 +263,10 @@ export default function ProjectPage() {
 
         <TabsContent value="log" className="flex-1 overflow-auto p-4 sm:p-6">
           <DailyLog logs={logs} onAdd={handleAddLog} isLoading={isLoading} />
+        </TabsContent>
+
+        <TabsContent value="timeline" className="flex-1 overflow-auto p-4 sm:p-6">
+          <ProjectTimeline projectId={project.id} active={activeTab === "timeline"} />
         </TabsContent>
       </Tabs>
 

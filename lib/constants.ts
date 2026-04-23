@@ -34,3 +34,14 @@ export const SECTION_CONFIG: Record<TaskSection, { color: string; bg: string }> 
   Product: { color: "text-primary", bg: "bg-primary/10" },
   Marketing: { color: "text-rose-400", bg: "bg-rose-400/10" },
 }
+
+export const TASK_COLUMN_LABELS: Record<string, string> = {
+  todo: "To-Do",
+  "in-progress": "In Progress",
+  done: "Done",
+}
+
+export function taskColumnLabel(id: string | null | undefined): string {
+  if (!id) return ""
+  return TASK_COLUMN_LABELS[id] ?? id
+}
