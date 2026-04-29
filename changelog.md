@@ -5,6 +5,15 @@
 ### Login/dashboard bootstrap
 - After email-code login, the client now waits for a fresh Better Auth session, refreshes App Router state, and replaces the route instead of pushing immediately. The dashboard organization bootstrap also exits loading reliably if active-org setup fails or the user has no organizations, preventing the post-login skeleton from hanging until a manual refresh.
 
+### Web Push notifications (mentions + assignments)
+- New `PushSubscription` Prisma model + migration `20260429180000_add_push_subscriptions` (`endpoint UNIQUE`, `userId` FK, `userAgent`, `(userId)` index). Cascades on user delete.
+- `lib/push.ts` wraps `web-push` with `sendPushToUser(userId, payload)` — fans out to every subscribed device, prunes 404/410 endpoints automatically, lazy-configures VAPID, no-ops cleanly when keys aren't set so dev environments without VAPID still work.
+- `lib/notifications.ts` now fires `sendPushToUser` for every notification it writes via `after()` from `next/server` — push runs after the response is sent, so it adds zero latency to the originating request and survives serverless/edge runtime cleanup. Per-type push titles map to "You were mentioned" / "Task assigned"; the link doubles as the OS notification `tag` so repeats to the same destination collapse instead of stacking.
+- `POST /api/push/subscribe` upserts a subscription for the current user keyed by endpoint (so re-subscribing on the same device replaces the old row). `POST /api/push/unsubscribe` removes one.
+- `public/sw.js` handles `push` (renders the OS notification with title/body/icon/tag from the payload) and `notificationclick` (closes the toast, focuses an existing app tab and navigates it to the link, or opens a new window).
+- New `<PushToggle />` lives in the footer of the notifications bell dropdown. Detects support, asks for permission, subscribes via `pushManager.subscribe` with the `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, posts the subscription to the API, and offers an off switch. Surfaces a "blocked in browser settings" hint if the user has previously denied.
+- Requires `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` in `.env` (optional `VAPID_SUBJECT`, defaults to `mailto:vlad.palacio@gmail.com`). Generate via `web-push generate-vapid-keys`.
+
 ### Performance pass (Vercel React best practices)
 - **`IdeaCaptureDialog` is now lazy-loaded** via `next/dynamic` from `IdeaFloatingButton`. The MediaRecorder + audio-blob plumbing no longer ships in the dashboard's initial JS — the chunk is fetched on first click, with a `pointerEnter`/`focus` preload so the open feels instant.
 - **`TaskEditDialog` is now lazy-loaded** via `next/dynamic` from `KanbanBoard`. Tiptap (StarterKit + Mention + Suggestion) only downloads when a user opens an edit dialog. A `hasEverEdited` flag keeps the dialog mounted across closes so internal state survives, while still skipping the import on kanban views that never edit.

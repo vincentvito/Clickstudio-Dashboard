@@ -15,6 +15,7 @@ import {
   clearAllNotifications,
 } from "@/lib/store"
 import { relativeTime } from "@/lib/format"
+import { PushToggle } from "./push-toggle"
 import type { Notification } from "@/lib/types"
 
 export function NotificationsBell() {
@@ -105,6 +106,10 @@ export function NotificationsBell() {
               </button>
             ))
           )}
+        </div>
+
+        <div className="border-border/50 flex items-center justify-end border-t px-3 py-2">
+          <PushToggle />
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
