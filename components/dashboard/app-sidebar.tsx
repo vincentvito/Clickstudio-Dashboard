@@ -38,6 +38,7 @@ import {
   Wrench,
   Users,
   Sparkles,
+  Lightbulb,
 } from "lucide-react"
 import { BrandMark } from "@/components/brand-mark"
 import { APP_VERSION } from "@/lib/changelog"
@@ -114,6 +115,18 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
                   <Link href="/dashboard">
                     <LayoutDashboard />
                     <span>All projects</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/dashboard/ideas"}
+                  tooltip="Ideas"
+                >
+                  <Link href="/dashboard/ideas">
+                    <Lightbulb />
+                    <span>Ideas</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

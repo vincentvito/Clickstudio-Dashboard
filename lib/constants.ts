@@ -1,6 +1,6 @@
 import type { ProjectState, TaskSection } from "./types"
 
-export const PROJECT_STATES: ProjectState[] = ["Idea", "In Build", "Live", "Paused"]
+export const PROJECT_STATES: ProjectState[] = ["Backlog", "In Build", "Live", "Paused"]
 
 export const TASK_SECTIONS: TaskSection[] = ["Product", "Marketing"]
 
@@ -8,7 +8,7 @@ export const PROJECT_STATE_CONFIG: Record<
   ProjectState,
   { color: string; bg: string; border: string }
 > = {
-  Idea: {
+  Backlog: {
     color: "text-violet-400",
     bg: "bg-violet-400/10",
     border: "border-violet-400/20",

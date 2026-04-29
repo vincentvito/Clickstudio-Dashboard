@@ -1,6 +1,13 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import {
+  useState,
+  useCallback,
+  useEffect,
+  startTransition,
+  ViewTransition,
+  addTransitionType,
+} from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -119,7 +126,9 @@ export default function ProjectPage() {
       <div className="flex flex-col items-center justify-center py-24">
         <p className="text-muted-foreground mb-4 text-sm">Project not found</p>
         <Button variant="outline" size="sm" asChild>
-          <Link href="/dashboard">Back to dashboard</Link>
+          <Link href="/dashboard" onNavigate={() => addTransitionType("nav-back")}>
+            Back to dashboard
+          </Link>
         </Button>
       </div>
     )
@@ -138,16 +147,25 @@ export default function ProjectPage() {
 
   async function handleDelete() {
     await deleteProject(project!.id)
-    router.push("/dashboard")
+    startTransition(() => {
+      addTransitionType("nav-back")
+      router.push("/dashboard")
+    })
   }
 
   return (
+    <ViewTransition
+      enter={{ "nav-forward": "nav-forward", "nav-back": "nav-back", default: "none" }}
+      exit={{ "nav-forward": "nav-forward", "nav-back": "nav-back", default: "none" }}
+      default="none"
+    >
     <div className="flex h-full flex-col">
       {/* Header bar */}
       <div className="border-border/50 flex items-center justify-between border-b px-4 py-3 sm:px-6">
         <div className="flex min-w-0 items-center gap-2">
           <Link
             href="/dashboard"
+            onNavigate={() => addTransitionType("nav-back")}
             className="text-muted-foreground hover:text-foreground shrink-0 text-xs transition-colors"
           >
             Projects
@@ -285,5 +303,6 @@ export default function ProjectPage() {
         onConfirm={handleDelete}
       />
     </div>
+    </ViewTransition>
   )
 }

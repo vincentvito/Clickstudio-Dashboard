@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react"
 import { AppSidebar } from "@/components/dashboard/app-sidebar"
 import { ProjectFormDialog } from "@/components/dashboard/project-form-dialog"
+import { IdeaFloatingButton } from "@/components/dashboard/idea-floating-button"
 import { NoOrganization } from "@/components/dashboard/no-org"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -15,8 +16,12 @@ import type { ProjectState } from "@/lib/types"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: session, isPending: sessionPending } = useSession()
-  const activeOrg = authClient.useActiveOrganization()
-  const orgs = authClient.useListOrganizations()
+  const {
+    data: activeOrganization,
+    isPending: activeOrganizationPending,
+    refetch: refetchActiveOrganization,
+  } = authClient.useActiveOrganization()
+  const { data: organizations, isPending: organizationsPending } = authClient.useListOrganizations()
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [orgChecked, setOrgChecked] = useState(false)
@@ -25,22 +30,61 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!sessionPending && !session) {
-      router.push("/auth/login")
+      router.replace("/auth/login")
     }
   }, [session, sessionPending, router])
 
   // Auto-set active org if user has one but none is active
   useEffect(() => {
-    if (session && orgs.data && orgs.data.length > 0 && !activeOrg.data) {
-      authClient.organization
-        .setActive({
-          organizationId: orgs.data[0].id,
+    let cancelled = false
+
+    async function ensureActiveOrganization() {
+      if (!session || organizationsPending || activeOrganizationPending) return
+
+      if (activeOrganization) {
+        setOrgChecked(true)
+        return
+      }
+
+      const firstOrganization = organizations?.[0]
+      if (!firstOrganization) {
+        setOrgChecked(true)
+        return
+      }
+
+      try {
+        const result = await authClient.organization.setActive({
+          organizationId: firstOrganization.id,
         })
-        .then(() => setOrgChecked(true))
-    } else if (session && orgs.data) {
-      setOrgChecked(true)
+
+        if (result.error) {
+          console.error("Failed to set active organization", result.error)
+          return
+        }
+
+        await refetchActiveOrganization()
+      } catch (error) {
+        console.error("Failed to set active organization", error)
+      } finally {
+        if (!cancelled) {
+          setOrgChecked(true)
+        }
+      }
     }
-  }, [session, orgs.data, activeOrg.data])
+
+    ensureActiveOrganization()
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    activeOrganization,
+    activeOrganizationPending,
+    organizations,
+    organizationsPending,
+    refetchActiveOrganization,
+    session,
+  ])
 
   const handleNewProject = useCallback(() => {
     setDialogOpen(true)
@@ -57,7 +101,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   // Loading
-  if (sessionPending || !orgChecked) {
+  if (sessionPending || (session && !orgChecked)) {
     return (
       <div className="flex h-screen">
         <div className="border-sidebar-border w-[260px] space-y-3 border-r p-4">
@@ -77,7 +121,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!session) return null
 
   // No organization
-  if (!activeOrg.data) {
+  if (!activeOrganization) {
     return <NoOrganization />
   }
 
@@ -85,7 +129,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <SidebarProvider>
       <AppSidebar onNewProject={handleNewProject} />
       <SidebarInset>
-        <header className="border-sidebar-border flex h-12 shrink-0 items-center justify-between border-b px-4">
+        <header
+          style={{ viewTransitionName: "persistent-header" }}
+          className="border-sidebar-border bg-background/80 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-30 flex h-12 shrink-0 items-center justify-between border-b px-4 backdrop-blur"
+        >
           <SidebarTrigger className="-ml-1" />
           <div className="flex items-center gap-1">
             <NotificationsBell />
@@ -96,6 +143,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </SidebarInset>
 
       <ProjectFormDialog open={dialogOpen} onOpenChange={setDialogOpen} onSubmit={handleSubmit} />
+      <IdeaFloatingButton />
     </SidebarProvider>
   )
 }

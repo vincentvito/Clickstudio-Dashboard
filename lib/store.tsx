@@ -3,7 +3,7 @@
 import { useMemo } from "react"
 import useSWR, { mutate } from "swr"
 import { toast } from "sonner"
-import type { Project, Task, LogEntry, Note, UserSummary, Notification } from "./types"
+import type { Project, Task, LogEntry, Note, UserSummary, Notification, Idea } from "./types"
 
 const fetcher = (url: string) =>
   fetch(url).then((res) => {
@@ -68,7 +68,7 @@ export function useProjectTimeline(projectId: string, enabled = true) {
 
 export interface ProjectStats {
   avgTimeToLiveMs: number | null
-  avgTimeInIdeaMs: number | null
+  avgTimeInBacklogMs: number | null
   avgTimeInBuildMs: number | null
   liveCount: number
   totalCount: number
@@ -337,5 +337,60 @@ export async function clearAllNotifications() {
     mutate("/api/notifications")
   } catch {
     toast.error("Failed to clear notifications")
+  }
+}
+
+// ─── Ideas ──────────────────────────────────────────────
+
+export function useIdeas() {
+  const { data, isLoading } = useSWR<Idea[]>("/api/ideas", fetcher)
+  return { ideas: data ?? [], isLoading }
+}
+
+export async function createIdeaFromText(text: string): Promise<Idea> {
+  try {
+    const idea = await api("/api/ideas", "POST", { kind: "text", text })
+    mutate("/api/ideas")
+    toast.success("Idea captured")
+    return idea
+  } catch (e: any) {
+    toast.error(e.message ?? "Failed to capture idea")
+    throw e
+  }
+}
+
+export async function createIdeaFromAudio(audioBase64: string, mimeType: string): Promise<Idea> {
+  try {
+    const idea = await api("/api/ideas", "POST", { kind: "audio", audioBase64, mimeType })
+    mutate("/api/ideas")
+    toast.success("Idea captured")
+    return idea
+  } catch (e: any) {
+    toast.error(e.message ?? "Failed to capture idea")
+    throw e
+  }
+}
+
+export async function deleteIdea(id: string) {
+  try {
+    await api(`/api/ideas/${id}`, "DELETE")
+    mutate("/api/ideas")
+    toast.success("Idea deleted")
+  } catch (e: any) {
+    toast.error(e.message ?? "Failed to delete idea")
+    throw e
+  }
+}
+
+export async function promoteIdea(id: string): Promise<Project> {
+  try {
+    const project = await api(`/api/ideas/${id}/promote`, "POST")
+    mutate("/api/ideas")
+    mutate("/api/projects")
+    toast.success(`Project "${project.title}" started`)
+    return project
+  } catch (e: any) {
+    toast.error(e.message ?? "Failed to start project")
+    throw e
   }
 }

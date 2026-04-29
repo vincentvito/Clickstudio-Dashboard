@@ -2,14 +2,14 @@
 // Prisma enums use PascalCase internally, @map handles DB storage
 
 const STATE_TO_PRISMA: Record<string, string> = {
-  Idea: "Idea",
+  Backlog: "Backlog",
   "In Build": "InBuild",
   Live: "Live",
   Paused: "Paused",
 }
 
 const STATE_FROM_PRISMA: Record<string, string> = {
-  Idea: "Idea",
+  Backlog: "Backlog",
   InBuild: "In Build",
   Live: "Live",
   Paused: "Paused",

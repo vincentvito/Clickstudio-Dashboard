@@ -27,9 +27,20 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (session) {
-      router.push(callbackUrl)
+      router.refresh()
+      router.replace(callbackUrl)
     }
   }, [session, router, callbackUrl])
+
+  async function navigateAfterLogin() {
+    await fetch("/api/auth/get-session", {
+      cache: "no-store",
+      credentials: "include",
+    })
+
+    router.refresh()
+    router.replace(callbackUrl)
+  }
 
   async function handleSendOtp(e: React.FormEvent) {
     e.preventDefault()
@@ -72,7 +83,7 @@ export default function LoginPage() {
         setOtp(["", "", "", "", "", ""])
         otpRefs.current[0]?.focus()
       } else {
-        router.push(callbackUrl)
+        await navigateAfterLogin()
       }
     } catch {
       setError("Verification failed")

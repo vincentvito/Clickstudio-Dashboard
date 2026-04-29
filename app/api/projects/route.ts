@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Title is required" }, { status: 400 })
   }
 
-  const initialState = stateToPrisma(state ?? "Idea") as any
+  const initialState = stateToPrisma(state ?? "Backlog") as any
 
   const project = await prisma.$transaction(async (tx) => {
     const created = await tx.project.create({

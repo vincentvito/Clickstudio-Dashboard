@@ -1,16 +1,23 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, ViewTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { ProjectCard } from "@/components/dashboard/project-card"
 import { ProjectFormDialog } from "@/components/dashboard/project-form-dialog"
 import { ProjectStatsStrip } from "@/components/dashboard/project-stats-strip"
+import { IdeasLane } from "@/components/dashboard/ideas-lane"
 import { useProjects, createProject } from "@/lib/store"
 import { PROJECT_STATES, PROJECT_STATE_CONFIG } from "@/lib/constants"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Plus } from "lucide-react"
 import type { ProjectState } from "@/lib/types"
 import { cn } from "@/lib/utils"
+
+const PAGE_VT_PROPS = {
+  enter: { "nav-forward": "nav-forward", "nav-back": "nav-back", default: "none" },
+  exit: { "nav-forward": "nav-forward", "nav-back": "nav-back", default: "none" },
+  default: "none",
+} as const
 
 export default function DashboardPage() {
   const { projects, logs, isLoading } = useProjects()
@@ -70,6 +77,7 @@ export default function DashboardPage() {
   }
 
   return (
+    <ViewTransition {...PAGE_VT_PROPS}>
     <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
       {/* Header */}
       <div className="mb-5 flex items-center justify-between">
@@ -79,6 +87,9 @@ export default function DashboardPage() {
           New project
         </Button>
       </div>
+
+      {/* Idea bucket */}
+      <IdeasLane />
 
       {/* Stats */}
       <ProjectStatsStrip />
@@ -123,17 +134,19 @@ export default function DashboardPage() {
       ) : (
         <div className="divide-border/40 divide-y">
           {sorted.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              tasks={project.tasks ?? []}
-              lastActivity={latestLogByProject.get(project.id) ?? project.createdAt}
-            />
+            <ViewTransition key={project.id}>
+              <ProjectCard
+                project={project}
+                tasks={project.tasks ?? []}
+                lastActivity={latestLogByProject.get(project.id) ?? project.createdAt}
+              />
+            </ViewTransition>
           ))}
         </div>
       )}
 
       <ProjectFormDialog open={dialogOpen} onOpenChange={setDialogOpen} onSubmit={handleSubmit} />
     </div>
+    </ViewTransition>
   )
 }

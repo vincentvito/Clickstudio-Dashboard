@@ -10,7 +10,7 @@ export async function GET() {
     include: { transitions: { orderBy: { at: "asc" } } },
   })
 
-  const durations = { toLive: [] as number[], inIdea: [] as number[], inBuild: [] as number[] }
+  const durations = { toLive: [] as number[], inBacklog: [] as number[], inBuild: [] as number[] }
   let liveCount = 0
 
   for (const p of projects) {
@@ -20,10 +20,10 @@ export async function GET() {
     const createdAt = (creation?.at ?? p.createdAt).getTime()
     const firstInBuild = p.transitions.find((t) => t.toState === "InBuild")?.at.getTime() ?? null
     const firstLive = p.transitions.find((t) => t.toState === "Live")?.at.getTime() ?? null
-    const leftIdea = p.transitions.find((t) => t.fromState === "Idea")?.at.getTime() ?? null
+    const leftBacklog = p.transitions.find((t) => t.fromState === "Backlog")?.at.getTime() ?? null
 
     if (firstLive !== null) durations.toLive.push(firstLive - createdAt)
-    if (leftIdea !== null) durations.inIdea.push(leftIdea - createdAt)
+    if (leftBacklog !== null) durations.inBacklog.push(leftBacklog - createdAt)
     if (firstInBuild !== null && firstLive !== null) {
       durations.inBuild.push(firstLive - firstInBuild)
     }
@@ -34,7 +34,7 @@ export async function GET() {
 
   return Response.json({
     avgTimeToLiveMs: avg(durations.toLive),
-    avgTimeInIdeaMs: avg(durations.inIdea),
+    avgTimeInBacklogMs: avg(durations.inBacklog),
     avgTimeInBuildMs: avg(durations.inBuild),
     liveCount,
     totalCount: projects.length,

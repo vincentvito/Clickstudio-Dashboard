@@ -1,4 +1,4 @@
-export type ProjectState = "Idea" | "In Build" | "Live" | "Paused"
+export type ProjectState = "Backlog" | "In Build" | "Live" | "Paused"
 
 export type TaskSection = "Product" | "Marketing"
 
@@ -51,6 +51,24 @@ export interface AppData {
   projects: Project[]
   tasks: Task[]
   logs: LogEntry[]
+}
+
+export type IdeaSource = "Text" | "Voice"
+export type IdeaStatus = "Pending" | "Promoted" | "Archived"
+
+export interface Idea {
+  id: string
+  title: string
+  description: string
+  links: string
+  rawTranscript: string
+  source: IdeaSource
+  status: IdeaStatus
+  createdAt: string
+  updatedAt: string
+  promotedToProjectId: string | null
+  promotedToProject: { id: string; title: string } | null
+  user?: UserSummary
 }
 
 export type NotificationType =

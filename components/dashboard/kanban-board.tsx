@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useMemo, useCallback } from "react"
+import dynamic from "next/dynamic"
 import {
   KanbanBoardProvider,
   KanbanBoard as KanbanBoardRoot,
@@ -19,7 +20,12 @@ import {
   KanbanColorCircle,
   type KanbanBoardCircleColor,
 } from "@/components/kanban"
-import { TaskEditDialog } from "./task-edit-dialog"
+// TaskEditDialog pulls in Tiptap (StarterKit + Mention + Suggestion) — heavy.
+// Load it on demand so a kanban view that never edits stays light.
+const TaskEditDialog = dynamic(
+  () => import("./task-edit-dialog").then((m) => ({ default: m.TaskEditDialog })),
+  { ssr: false },
+)
 import { ConfirmDialog } from "./confirm-dialog"
 import { MentionRenderer } from "./mention-renderer"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -69,7 +75,14 @@ export function KanbanBoard({
   const { members } = useOrgMembers()
 
   const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [hasEverEdited, setHasEverEdited] = useState(false)
   const [deletingTask, setDeletingTask] = useState<Task | null>(null)
+
+  // Once the user opens an edit dialog, keep the dialog mounted across closes
+  // so its (cached) Tiptap chunk and internal state stick around for re-opens.
+  useEffect(() => {
+    if (editingTask && !hasEverEdited) setHasEverEdited(true)
+  }, [editingTask, hasEverEdited])
   const [creatingIn, setCreatingIn] = useState<string | null>(null)
   const [newTitle, setNewTitle] = useState("")
   const [newAssigneeIds, setNewAssigneeIds] = useState<string[]>([])
@@ -344,14 +357,16 @@ export function KanbanBoard({
         </KanbanBoardRoot>
       </KanbanBoardProvider>
 
-      <TaskEditDialog
-        task={editingTask}
-        open={editingTask !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditingTask(null)
-        }}
-        onSave={onUpdateTask}
-      />
+      {hasEverEdited && (
+        <TaskEditDialog
+          task={editingTask}
+          open={editingTask !== null}
+          onOpenChange={(open) => {
+            if (!open) setEditingTask(null)
+          }}
+          onSave={onUpdateTask}
+        />
+      )}
 
       <ConfirmDialog
         open={deletingTask !== null}

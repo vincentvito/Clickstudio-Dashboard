@@ -36,7 +36,7 @@ export function ProjectFormDialog({
   const [title, setTitle] = useState("")
   const [brainDump, setBrainDump] = useState("")
   const [artifactLinks, setArtifactLinks] = useState("")
-  const [state, setState] = useState<ProjectState>("Idea")
+  const [state, setState] = useState<ProjectState>("Backlog")
 
   useEffect(() => {
     if (project) {
@@ -48,7 +48,7 @@ export function ProjectFormDialog({
       setTitle("")
       setBrainDump("")
       setArtifactLinks("")
-      setState("Idea")
+      setState("Backlog")
     }
   }, [project, open])
 

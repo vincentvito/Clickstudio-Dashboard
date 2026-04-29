@@ -1,6 +1,6 @@
 "use client"
 
-import { memo } from "react"
+import { memo, addTransitionType } from "react"
 import Link from "next/link"
 import { Progress } from "@/components/ui/progress"
 import { StatusBadge } from "./status-badge"
@@ -24,6 +24,7 @@ export const ProjectCard = memo(function ProjectCard({
   return (
     <Link
       href={`/dashboard/${project.id}`}
+      onNavigate={() => addTransitionType("nav-forward")}
       className="group hover:bg-accent/5 focus-visible:ring-ring block rounded-lg border border-transparent px-4 py-3.5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
     >
       <div className="flex items-start justify-between gap-3">

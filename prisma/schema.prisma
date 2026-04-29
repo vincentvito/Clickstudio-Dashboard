@@ -27,6 +27,7 @@ model User {
   notifications        Notification[]
   stateTransitions     ProjectStateTransition[]
   taskTransitions      TaskTransition[]
+  ideas                Idea[]
 
   @@unique([email])
   @@map("user")
@@ -94,6 +95,7 @@ model Organization {
   members     Member[]
   invitations Invitation[]
   projects    Project[]
+  ideas       Idea[]
 
   @@map("organization")
 }
@@ -138,7 +140,7 @@ model Project {
   title         String
   brainDump     String       @default("")
   artifactLinks String       @default("")
-  state         ProjectState @default(Idea)
+  state         ProjectState @default(Backlog)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
@@ -152,6 +154,7 @@ model Project {
   logs        LogEntry[]
   notes       Note[]
   transitions ProjectStateTransition[]
+  promotedFromIdea Idea?
 
   @@index([organizationId])
   @@index([userId])
@@ -262,10 +265,38 @@ model Note {
   @@map("note")
 }
 
+// ─── Idea Bucket ────────────────────────────────────────
+
+model Idea {
+  id            String     @id @default(cuid())
+  title         String
+  description   String     @default("")
+  links         String     @default("")
+  rawTranscript String     @default("")
+  source        IdeaSource @default(Text)
+  status        IdeaStatus @default(Pending)
+
+  promotedToProjectId String?  @unique
+  promotedToProject   Project? @relation(fields: [promotedToProjectId], references: [id], onDelete: SetNull)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, status])
+  @@index([userId])
+  @@map("idea")
+}
+
 // ─── Enums ──────────────────────────────────────────────
 
 enum ProjectState {
-  Idea
+  Backlog
   InBuild   @map("In Build")
   Live
   Paused
@@ -274,4 +305,15 @@ enum ProjectState {
 enum TaskSection {
   Product
   Marketing
+}
+
+enum IdeaSource {
+  Text
+  Voice
+}
+
+enum IdeaStatus {
+  Pending
+  Promoted
+  Archived
 }
