@@ -10,25 +10,25 @@ datasource db {
 // ─── Better Auth ────────────────────────────────────────
 
 model User {
-  id            String    @id
-  name          String
-  email         String
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  members       Member[]
-  invitations   Invitation[] @relation("InviterInvitations")
-  projects             Project[]
-  assignedTasks        Task[]                   @relation("TaskAssignees")
-  notes                Note[]
-  notifications        Notification[]
-  stateTransitions     ProjectStateTransition[]
-  taskTransitions      TaskTransition[]
-  ideas                Idea[]
-  pushSubscriptions    PushSubscription[]
+  id                String                   @id
+  name              String
+  email             String
+  emailVerified     Boolean                  @default(false)
+  image             String?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  sessions          Session[]
+  accounts          Account[]
+  members           Member[]
+  invitations       Invitation[]             @relation("InviterInvitations")
+  projects          Project[]
+  assignedTasks     Task[]                   @relation("TaskAssignees")
+  notes             Note[]
+  notifications     Notification[]
+  stateTransitions  ProjectStateTransition[]
+  taskTransitions   TaskTransition[]
+  ideas             Idea[]
+  pushSubscriptions PushSubscription[]
 
   @@unique([email])
   @@map("user")
@@ -151,10 +151,10 @@ model Project {
   userId String
   user   User   @relation(fields: [userId], references: [id])
 
-  tasks       Task[]
-  logs        LogEntry[]
-  notes       Note[]
-  transitions ProjectStateTransition[]
+  tasks            Task[]
+  logs             LogEntry[]
+  notes            Note[]
+  transitions      ProjectStateTransition[]
   promotedFromIdea Idea?
 
   @@index([organizationId])
@@ -163,9 +163,9 @@ model Project {
 }
 
 model ProjectStateTransition {
-  id        String        @id @default(cuid())
+  id        String  @id @default(cuid())
   projectId String
-  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   // null fromState = project creation
   fromState ProjectState?
@@ -234,7 +234,7 @@ model LogEntry {
 
 model Notification {
   id        String   @id @default(cuid())
-  type      String   // "task_assigned" | "note_mention" | "task_mention" | "log_mention"
+  type      String // "task_assigned" | "note_mention" | "task_mention" | "log_mention"
   message   String
   link      String?
   isRead    Boolean  @default(false)
@@ -285,13 +285,18 @@ model PushSubscription {
 // ─── Idea Bucket ────────────────────────────────────────
 
 model Idea {
-  id            String     @id @default(cuid())
-  title         String
-  description   String     @default("")
-  links         String     @default("")
-  rawTranscript String     @default("")
-  source        IdeaSource @default(Text)
-  status        IdeaStatus @default(Pending)
+  id                     String               @id @default(cuid())
+  title                  String
+  description            String               @default("")
+  links                  String               @default("")
+  rawTranscript          String               @default("")
+  source                 IdeaSource           @default(Text)
+  status                 IdeaStatus           @default(Pending)
+  nameSearchStatus       IdeaNameSearchStatus @default(NotStarted)
+  nameSearchError        String?
+  nameSearchUpdatedAt    DateTime?
+  nameSearchCheckedCount Int                  @default(0)
+  nameSearchLastDomain   String?
 
   promotedToProjectId String?  @unique
   promotedToProject   Project? @relation(fields: [promotedToProjectId], references: [id], onDelete: SetNull)
@@ -302,6 +307,8 @@ model Idea {
   userId String
   user   User   @relation(fields: [userId], references: [id])
 
+  nameSuggestions IdeaNameSuggestion[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -310,11 +317,28 @@ model Idea {
   @@map("idea")
 }
 
+model IdeaNameSuggestion {
+  id     String @id @default(cuid())
+  ideaId String
+  idea   Idea   @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  name      String
+  domain    String
+  rationale String @default("")
+  position  Int    @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@unique([ideaId, domain])
+  @@index([ideaId, position])
+  @@map("idea_name_suggestion")
+}
+
 // ─── Enums ──────────────────────────────────────────────
 
 enum ProjectState {
   Backlog
-  InBuild   @map("In Build")
+  InBuild @map("In Build")
   Live
   Paused
 }
@@ -333,4 +357,11 @@ enum IdeaStatus {
   Pending
   Promoted
   Archived
+}
+
+enum IdeaNameSearchStatus {
+  NotStarted
+  Running
+  Completed
+  Failed
 }

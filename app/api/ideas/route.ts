@@ -1,7 +1,10 @@
-import { NextRequest } from "next/server"
+import { after, NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
 import { requireOrg, hasPermission, unauthorized, forbidden } from "@/lib/api-auth"
 import { extractIdea } from "@/lib/ai/gemini"
+import { runIdeaNameFinder } from "@/lib/ideas/name-finder-run"
+
+export const maxDuration = 60
 
 export async function GET() {
   const org = await requireOrg()
@@ -12,6 +15,7 @@ export async function GET() {
     include: {
       user: { select: { id: true, name: true, email: true, image: true } },
       promotedToProject: { select: { id: true, title: true } },
+      nameSuggestions: { orderBy: { position: "asc" } },
     },
     orderBy: { createdAt: "desc" },
   })
@@ -61,14 +65,26 @@ export async function POST(req: NextRequest) {
       links: extracted.links.join("\n"),
       rawTranscript: extracted.rawTranscript,
       source: body.kind === "audio" ? "Voice" : "Text",
+      nameSearchStatus: "Running",
+      nameSearchUpdatedAt: new Date(),
       organizationId: org.organizationId,
       userId: org.user.id,
     },
     include: {
       user: { select: { id: true, name: true, email: true, image: true } },
       promotedToProject: { select: { id: true, title: true } },
+      nameSuggestions: { orderBy: { position: "asc" } },
     },
   })
+
+  after(() =>
+    runIdeaNameFinder({
+      ideaId: idea.id,
+      organizationId: org.organizationId,
+    }).catch((error) => {
+      console.error("Name finder failed after idea capture", error)
+    }),
+  )
 
   return Response.json(idea, { status: 201 })
 }

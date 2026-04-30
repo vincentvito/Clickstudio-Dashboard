@@ -4,6 +4,7 @@ import { useMemo } from "react"
 import useSWR, { mutate } from "swr"
 import { toast } from "sonner"
 import type { Project, Task, LogEntry, Note, UserSummary, Notification, Idea } from "./types"
+import { isIdeaNameSearchStuck } from "@/lib/ideas/name-search-status"
 
 const fetcher = (url: string) =>
   fetch(url).then((res) => {
@@ -75,10 +76,7 @@ export interface ProjectStats {
 }
 
 export function useProjectStats() {
-  const { data, isLoading, error } = useSWR<ProjectStats>(
-    "/api/projects/stats",
-    fetcher,
-  )
+  const { data, isLoading, error } = useSWR<ProjectStats>("/api/projects/stats", fetcher)
   return { stats: data ?? null, isLoading, error }
 }
 
@@ -111,6 +109,7 @@ async function api(url: string, method: string, body?: unknown) {
     const err = await res.json().catch(() => ({ error: "Request failed" }))
     throw new Error(err.error ?? "Request failed")
   }
+  if (res.status === 204) return null
   return res.json()
 }
 
@@ -343,14 +342,68 @@ export async function clearAllNotifications() {
 // ─── Ideas ──────────────────────────────────────────────
 
 export function useIdeas() {
-  const { data, isLoading } = useSWR<Idea[]>("/api/ideas", fetcher)
+  const { data, isLoading } = useSWR<Idea[]>("/api/ideas", fetcher, {
+    refreshInterval: (latestIdeas) =>
+      latestIdeas?.some(
+        (idea) => idea.nameSearchStatus === "Running" && !isIdeaNameSearchStuck(idea),
+      )
+        ? 2500
+        : 0,
+  })
   return { ideas: data ?? [], isLoading }
+}
+
+function upsertIdeaInCache(idea: Idea) {
+  mutate(
+    "/api/ideas",
+    (current: Idea[] | undefined) => {
+      if (!current) return [idea]
+      const exists = current.some((item) => item.id === idea.id)
+      return exists
+        ? current.map((item) => (item.id === idea.id ? idea : item))
+        : [idea, ...current]
+    },
+    { revalidate: false },
+  )
+}
+
+async function runNameFinderForIdea(id: string) {
+  mutate(
+    "/api/ideas",
+    (current: Idea[] | undefined) =>
+      current?.map((idea) =>
+        idea.id === id
+          ? {
+              ...idea,
+              nameSearchStatus: "Running" as const,
+              nameSearchError: null,
+              nameSuggestions: [],
+            }
+          : idea,
+      ),
+    { revalidate: false },
+  )
+
+  const res = await fetch(`/api/ideas/${id}/find-names`, { method: "POST" })
+  const payload = await res.json().catch(() => null)
+
+  if (res.ok) {
+    upsertIdeaInCache(payload as Idea)
+    return payload as Idea
+  }
+
+  if (payload?.idea) {
+    upsertIdeaInCache(payload.idea as Idea)
+  } else {
+    mutate("/api/ideas")
+  }
+  throw new Error(payload?.error ?? "Failed to find name ideas")
 }
 
 export async function createIdeaFromText(text: string): Promise<Idea> {
   try {
     const idea = await api("/api/ideas", "POST", { kind: "text", text })
-    mutate("/api/ideas")
+    upsertIdeaInCache(idea)
     toast.success("Idea captured")
     return idea
   } catch (e: any) {
@@ -362,7 +415,7 @@ export async function createIdeaFromText(text: string): Promise<Idea> {
 export async function createIdeaFromAudio(audioBase64: string, mimeType: string): Promise<Idea> {
   try {
     const idea = await api("/api/ideas", "POST", { kind: "audio", audioBase64, mimeType })
-    mutate("/api/ideas")
+    upsertIdeaInCache(idea)
     toast.success("Idea captured")
     return idea
   } catch (e: any) {
@@ -378,6 +431,27 @@ export async function deleteIdea(id: string) {
     toast.success("Idea deleted")
   } catch (e: any) {
     toast.error(e.message ?? "Failed to delete idea")
+    throw e
+  }
+}
+
+export async function retryIdeaNameFinder(id: string): Promise<Idea> {
+  try {
+    return await runNameFinderForIdea(id)
+  } catch (e: any) {
+    toast.error(e.message ?? "Failed to find name ideas")
+    throw e
+  }
+}
+
+export async function updateIdeaTitle(id: string, title: string): Promise<Idea> {
+  try {
+    const idea = await api(`/api/ideas/${id}`, "PATCH", { title })
+    upsertIdeaInCache(idea)
+    toast.success("Idea title updated")
+    return idea
+  } catch (e: any) {
+    toast.error(e.message ?? "Failed to update idea")
     throw e
   }
 }

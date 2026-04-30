@@ -2,7 +2,7 @@
 
 import { useMemo, ViewTransition } from "react"
 import Link from "next/link"
-import { Lightbulb, Mic, Type } from "lucide-react"
+import { Lightbulb, Loader2, Mic, Sparkles, Type } from "lucide-react"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { useIdeas } from "@/lib/store"
 import { cn } from "@/lib/utils"
@@ -36,7 +36,14 @@ export function IdeasLane() {
       <ScrollArea className="w-full whitespace-nowrap">
         <div className="flex gap-2 pb-2">
           {pending.map((idea) => {
-            const SourceIcon = idea.source === "Voice" ? Mic : Type
+            const SourceIcon =
+              idea.nameSearchStatus === "Running"
+                ? Loader2
+                : idea.nameSuggestions.length > 0
+                  ? Sparkles
+                  : idea.source === "Voice"
+                    ? Mic
+                    : Type
             return (
               <ViewTransition key={idea.id} enter="fade-in" exit="fade-out">
                 <Link
@@ -49,7 +56,10 @@ export function IdeasLane() {
                   title={idea.title}
                 >
                   <SourceIcon
-                    className="size-3.5 shrink-0 text-yellow-500 dark:text-yellow-300"
+                    className={cn(
+                      "size-3.5 shrink-0 text-yellow-500 dark:text-yellow-300",
+                      idea.nameSearchStatus === "Running" && "animate-spin",
+                    )}
                     strokeWidth={2.5}
                   />
                   <span className="text-foreground font-medium">{idea.title}</span>

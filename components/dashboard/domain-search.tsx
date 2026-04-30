@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Search, Globe, Loader2, Check, X } from "lucide-react"
+import { checkDomainAvailability } from "@/lib/domain/check-domain"
 
 interface DomainResult {
   domain: string
@@ -14,40 +15,6 @@ interface DomainResult {
 }
 
 const EXTENSIONS = [".com", ".io", ".co", ".app", ".dev", ".ai", ".xyz", ".net", ".org"]
-
-async function checkDomain(domain: string): Promise<{ available: boolean; error?: string }> {
-  try {
-    // RDAP is the public successor to WHOIS -- 404 means not registered
-    const res = await fetch(`https://rdap.org/domain/${domain}`, {
-      method: "HEAD",
-      signal: AbortSignal.timeout(5000),
-    })
-
-    if (res.status === 404) {
-      return { available: true }
-    }
-    if (res.ok || res.status === 301 || res.status === 302) {
-      return { available: false }
-    }
-    // Some TLDs don't support RDAP yet -- fall back to DNS check
-    return checkDomainDns(domain)
-  } catch {
-    // RDAP failed (CORS, timeout, etc) -- fall back to DNS
-    return checkDomainDns(domain)
-  }
-}
-
-async function checkDomainDns(domain: string): Promise<{ available: boolean; error?: string }> {
-  try {
-    const res = await fetch(`https://dns.google/resolve?name=${domain}&type=A`)
-    const data = await res.json()
-    // Status 3 = NXDOMAIN (domain doesn't exist in DNS)
-    const available = data.Status === 3
-    return { available }
-  } catch {
-    return { available: false, error: "Check failed" }
-  }
-}
 
 export function DomainSearch() {
   const [query, setQuery] = useState("")
@@ -72,7 +39,7 @@ export function DomainSearch() {
     // Check each domain and update results as they come in
     await Promise.allSettled(
       domains.map(async (domain, index) => {
-        const result = await checkDomain(domain)
+        const result = await checkDomainAvailability(domain)
         setResults((prev) =>
           prev.map((r, i) =>
             i === index

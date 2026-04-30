@@ -2,6 +2,16 @@
 
 ## 2026-04-29
 
+### Idea name-finder agent
+- Added AI SDK (`ai` + `@ai-sdk/google`) name-finder flow for saved ideas. After an idea is captured, the create route marks it `Running` and starts the name-finder with `after()`, so the idea appears immediately while the server keeps working even if the tab closes.
+- New `NameFinderAgent` uses Gemini with a bounded `checkDomain` tool budget to find up to two available `.com` names. Domain checks now live in shared `lib/domain/check-domain.ts` and reuse RDAP with DNS fallback.
+- New `IdeaNameSuggestion` model, `IdeaNameSearchStatus` enum, and migration `20260429193000_add_idea_name_suggestions` persist agent status, errors, and suggested domains per idea.
+- Idea cards now show name-finder progress, available suggestions, retry on failure, and a `Use` action that updates the idea title without overwriting it automatically. `/api/ideas` conditionally polls while a name search is running so server-side `after()` results appear without client-driven agent kickoff.
+- Name-finder runs now race the agent against a 55s timeout and mark the idea `Failed` on timeout. The client also treats `Running` searches older than 120s as stalled, stops polling, and shows a retry affordance for crash/teardown cases where no server cleanup ran.
+- Name-finder progress now records the checked domain count and latest domain (`20260430002500_add_idea_name_search_progress`), so cards can show what the agent is checking. If Gemini's tool loop verifies domains but fails to produce a final structured answer, the runner falls back to the verified available domains instead of surfacing a generic "No output generated" error.
+- AI SDK `No output generated` errors after a completed domain-check pass now resolve as "No available .com names found yet" when no verified domains are available, keeping internal model-loop failures out of the idea card UI.
+- Idea deletion now uses the shared confirmation dialog before the destructive action runs. The client API helper also handles `204 No Content` responses so successful deletes no longer show a false JSON parse error.
+
 ### Login/dashboard bootstrap
 - After email-code login, the client now waits for a fresh Better Auth session, refreshes App Router state, and replaces the route instead of pushing immediately. The dashboard organization bootstrap also exits loading reliably if active-org setup fails or the user has no organizations, preventing the post-login skeleton from hanging until a manual refresh.
 

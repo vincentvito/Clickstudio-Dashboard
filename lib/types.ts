@@ -55,6 +55,17 @@ export interface AppData {
 
 export type IdeaSource = "Text" | "Voice"
 export type IdeaStatus = "Pending" | "Promoted" | "Archived"
+export type IdeaNameSearchStatus = "NotStarted" | "Running" | "Completed" | "Failed"
+
+export interface IdeaNameSuggestion {
+  id: string
+  ideaId: string
+  name: string
+  domain: string
+  rationale: string
+  position: number
+  createdAt: string
+}
 
 export interface Idea {
   id: string
@@ -64,6 +75,12 @@ export interface Idea {
   rawTranscript: string
   source: IdeaSource
   status: IdeaStatus
+  nameSearchStatus: IdeaNameSearchStatus
+  nameSearchError: string | null
+  nameSearchUpdatedAt: string | null
+  nameSearchCheckedCount: number
+  nameSearchLastDomain: string | null
+  nameSuggestions: IdeaNameSuggestion[]
   createdAt: string
   updatedAt: string
   promotedToProjectId: string | null
@@ -71,11 +88,7 @@ export interface Idea {
   user?: UserSummary
 }
 
-export type NotificationType =
-  | "task_assigned"
-  | "note_mention"
-  | "task_mention"
-  | "log_mention"
+export type NotificationType = "task_assigned" | "note_mention" | "task_mention" | "log_mention"
 
 export interface Notification {
   id: string
