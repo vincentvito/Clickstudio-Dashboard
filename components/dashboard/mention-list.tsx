@@ -3,12 +3,14 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
+import { displayName } from "@/lib/user-display"
 
 export interface MentionItem {
   id: string
   name: string | null
   email: string
   image: string | null
+  isAgent?: boolean
 }
 
 interface MentionListProps {
@@ -78,7 +80,7 @@ export const MentionList = forwardRef<
               {(item.name?.[0] || item.email[0]).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <span className="flex-1 truncate">{item.name || item.email.split("@")[0]}</span>
+          <span className="flex-1 truncate">{displayName(item)}</span>
         </button>
       ))}
     </div>

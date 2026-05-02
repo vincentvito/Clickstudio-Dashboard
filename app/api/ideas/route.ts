@@ -13,7 +13,7 @@ export async function GET() {
   const ideas = await prisma.idea.findMany({
     where: { organizationId: org.organizationId },
     include: {
-      user: { select: { id: true, name: true, email: true, image: true } },
+      user: { select: { id: true, name: true, email: true, image: true, isAgent: true } },
       promotedToProject: { select: { id: true, title: true } },
       nameSuggestions: { orderBy: { position: "asc" } },
     },
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       userId: org.user.id,
     },
     include: {
-      user: { select: { id: true, name: true, email: true, image: true } },
+      user: { select: { id: true, name: true, email: true, image: true, isAgent: true } },
       promotedToProject: { select: { id: true, title: true } },
       nameSuggestions: { orderBy: { position: "asc" } },
     },

@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma"
 import { requireOrg, unauthorized } from "@/lib/api-auth"
 import { extractMentionedUserIds } from "@/lib/mentions"
 import { createNotifications } from "@/lib/notifications"
+import { resolveMentionRecipients } from "@/lib/mention-recipients"
 
 export async function GET(
   _req: NextRequest,
@@ -24,7 +25,7 @@ export async function GET(
   const notes = await prisma.note.findMany({
     where: { projectId },
     include: {
-      author: { select: { id: true, name: true, email: true, image: true } },
+      author: { select: { id: true, name: true, email: true, image: true, isAgent: true } },
     },
     orderBy: { updatedAt: "desc" },
   })
@@ -60,21 +61,20 @@ export async function POST(
       authorId: org.user.id,
     },
     include: {
-      author: { select: { id: true, name: true, email: true, image: true } },
+      author: { select: { id: true, name: true, email: true, image: true, isAgent: true } },
     },
   })
 
-  // Notify mentioned members (only if they're in the same org)
+  // Notify mentioned recipients (members or active agents in the same org)
   const mentionedIds = extractMentionedUserIds(content).filter((id) => id !== org.user.id)
-  if (mentionedIds.length > 0) {
-    const validMembers = await prisma.member.findMany({
-      where: { organizationId: org.organizationId, userId: { in: mentionedIds } },
-      select: { userId: true },
-    })
+  const recipients = await resolveMentionRecipients(org.organizationId, mentionedIds, {
+    projectId,
+  })
+  if (recipients.length > 0) {
     const authorName = org.user.name || org.user.email
     await createNotifications(
-      validMembers.map((m) => ({
-        userId: m.userId,
+      recipients.map((userId) => ({
+        userId,
         type: "note_mention",
         message: `${authorName} mentioned you in "${note.title}"`,
         link: `/dashboard/${projectId}?tab=notes&note=${note.id}`,

@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useOrgMembers } from "@/lib/store"
 import type { Task } from "@/lib/types"
+import { displayName } from "@/lib/user-display"
 import { Check, Users } from "lucide-react"
 import { TiptapEditor } from "./tiptap-editor"
 
@@ -33,7 +34,7 @@ export function TaskEditDialog({ task, open, onOpenChange, onSave }: TaskEditDia
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [assigneeIds, setAssigneeIds] = useState<string[]>([])
-  const { members } = useOrgMembers()
+  const { members } = useOrgMembers(task?.projectId)
 
   useEffect(() => {
     if (task) {
@@ -90,6 +91,7 @@ export function TaskEditDialog({ task, open, onOpenChange, onSave }: TaskEditDia
             <TiptapEditor
               value={description}
               onChange={setDescription}
+              projectId={task.projectId}
               placeholder="Add a description... Use @ to mention teammates."
             />
           </div>
@@ -112,7 +114,7 @@ export function TaskEditDialog({ task, open, onOpenChange, onSave }: TaskEditDia
                         ))}
                       </div>
                       <span className="truncate">
-                        {selectedMembers.map((m) => m.name || m.email.split("@")[0]).join(", ")}
+                        {selectedMembers.map((m) => displayName(m)).join(", ")}
                       </span>
                     </>
                   ) : (
@@ -141,7 +143,7 @@ export function TaskEditDialog({ task, open, onOpenChange, onSave }: TaskEditDia
                             {(m.name?.[0] || m.email[0]).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="flex-1 truncate">{m.name || m.email.split("@")[0]}</span>
+                        <span className="flex-1 truncate">{displayName(m)}</span>
                         {selected && <Check className="text-primary size-3.5" />}
                       </div>
                     </DropdownMenuItem>

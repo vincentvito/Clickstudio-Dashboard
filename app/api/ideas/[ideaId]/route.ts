@@ -25,7 +25,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ ideaId: s
     where: { id: ideaId },
     data: { title },
     include: {
-      user: { select: { id: true, name: true, email: true, image: true } },
+      user: { select: { id: true, name: true, email: true, image: true, isAgent: true } },
       promotedToProject: { select: { id: true, title: true } },
       nameSuggestions: { orderBy: { position: "asc" } },
     },

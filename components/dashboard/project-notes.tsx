@@ -17,6 +17,7 @@ const TiptapEditor = dynamic(() => import("./tiptap-editor").then((m) => m.Tipta
 import { useNotes, createNote, updateNote, deleteNote } from "@/lib/store"
 import { relativeTime } from "@/lib/format"
 import type { Note } from "@/lib/types"
+import { displayName } from "@/lib/user-display"
 import { Plus, Trash2, FileText, ArrowLeft } from "lucide-react"
 
 interface ProjectNotesProps {
@@ -165,6 +166,7 @@ export function ProjectNotes({ projectId, focusNoteId, onFocusHandled }: Project
           key={editingNoteId}
           value={content}
           onChange={handleContentChange}
+          projectId={projectId}
           placeholder="Write your notes here... Type @ to mention a member"
           className="text-sm leading-relaxed"
         />
@@ -231,12 +233,18 @@ export function ProjectNotes({ projectId, focusNoteId, onFocusHandled }: Project
                 )}
                 <div className="mt-1 flex items-center gap-2">
                   {note.author && (
-                    <Avatar className="size-4">
-                      {note.author.image && <AvatarImage src={note.author.image} />}
-                      <AvatarFallback className="bg-primary/10 text-primary text-[6px]">
-                        {(note.author.name?.[0] ?? note.author.email[0]).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <>
+                      <Avatar className="size-4">
+                        {note.author.image && <AvatarImage src={note.author.image} />}
+                        <AvatarFallback className="bg-primary/10 text-primary text-[6px]">
+                          {(note.author.name?.[0] ?? note.author.email[0]).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-muted-foreground/80 truncate text-[11px]">
+                        {displayName(note.author)}
+                      </span>
+                      <span className="text-muted-foreground/40 text-[11px]">·</span>
+                    </>
                   )}
                   <span className="text-muted-foreground/60 text-[11px]">
                     {relativeTime(note.updatedAt)}

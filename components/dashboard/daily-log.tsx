@@ -12,10 +12,11 @@ import { MentionRenderer } from "./mention-renderer"
 interface DailyLogProps {
   logs: LogEntry[]
   onAdd: (text: string) => void | Promise<void>
+  projectId: string
   isLoading?: boolean
 }
 
-export function DailyLog({ logs, onAdd, isLoading }: DailyLogProps) {
+export function DailyLog({ logs, onAdd, projectId, isLoading }: DailyLogProps) {
   const [message, setMessage] = useState("")
   const [posting, setPosting] = useState(false)
 
@@ -41,6 +42,7 @@ export function DailyLog({ logs, onAdd, isLoading }: DailyLogProps) {
           value={message}
           onChange={setMessage}
           onSubmit={submit}
+          projectId={projectId}
           placeholder="Quick update — use @ to mention teammates"
           className="text-sm"
           disabled={posting}

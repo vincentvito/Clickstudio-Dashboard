@@ -3,8 +3,9 @@ import prisma from "@/lib/prisma"
 import { requireOrg, unauthorized } from "@/lib/api-auth"
 import { createNotifications } from "@/lib/notifications"
 import { diffMentions } from "@/lib/mentions"
+import { resolveMentionRecipients } from "@/lib/mention-recipients"
 
-const ASSIGNEE_SELECT = { id: true, name: true, email: true, image: true }
+const ASSIGNEE_SELECT = { id: true, name: true, email: true, image: true, isAgent: true }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ taskId: string }> }) {
   const org = await requireOrg()
@@ -27,11 +28,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ta
   let assigneesUpdate: Record<string, unknown> | undefined
   let newAssigneeIds: string[] = []
   if (body.assigneeIds !== undefined) {
-    const validMembers = await prisma.member.findMany({
-      where: { organizationId: org.organizationId, userId: { in: body.assigneeIds } },
-      select: { userId: true },
+    // Members AND active agents are valid assignees — without including
+    // agents here, a human edit that re-saves the assignee list would drop
+    // any agent assignees that were on the task. Project-scoped agents are
+    // filtered out so a human can't accidentally hand a task to an agent
+    // whose token won't let it act on that project.
+    const validIds = await resolveMentionRecipients(org.organizationId, body.assigneeIds, {
+      projectId: task.projectId,
     })
-    const validIds = validMembers.map((m) => m.userId)
     assigneesUpdate = {
       assignees: { set: validIds.map((id) => ({ id })) },
     }
@@ -84,10 +88,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ta
     )
   }
 
-  const mentionedMembers = newlyMentioned.length
-    ? await prisma.member.findMany({
-        where: { organizationId: org.organizationId, userId: { in: newlyMentioned } },
-        select: { userId: true },
+  const mentionRecipients = newlyMentioned.length
+    ? await resolveMentionRecipients(org.organizationId, newlyMentioned, {
+        projectId: task.projectId,
       })
     : []
 
@@ -98,8 +101,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ta
       message: `${inviterName} assigned you to "${updated.title}"`,
       link: taskLink,
     })),
-    ...mentionedMembers.map((m) => ({
-      userId: m.userId,
+    ...mentionRecipients.map((userId) => ({
+      userId,
       type: "task_mention" as const,
       message: `${inviterName} mentioned you in "${updated.title}"`,
       link: taskLink,

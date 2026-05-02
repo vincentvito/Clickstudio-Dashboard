@@ -3,8 +3,9 @@ import prisma from "@/lib/prisma"
 import { requireOrg, unauthorized } from "@/lib/api-auth"
 import { createNotifications } from "@/lib/notifications"
 import { extractMentionedUserIds } from "@/lib/mentions"
+import { resolveMentionRecipients } from "@/lib/mention-recipients"
 
-const ASSIGNEE_SELECT = { id: true, name: true, email: true, image: true }
+const ASSIGNEE_SELECT = { id: true, name: true, email: true, image: true, isAgent: true }
 
 export async function POST(
   req: NextRequest,
@@ -32,22 +33,17 @@ export async function POST(
 
   const descriptionValue = typeof description === "string" ? description : ""
 
-  const [maxPosition, validMembers] = await Promise.all([
+  const [maxPosition, validRecipientIds] = await Promise.all([
     prisma.task.aggregate({
       where: { projectId, columnId: columnId ?? "todo" },
       _max: { position: true },
     }),
     assigneeIds?.length
-      ? prisma.member.findMany({
-          where: { organizationId: org.organizationId, userId: { in: assigneeIds } },
-          select: { userId: true },
-        })
+      ? resolveMentionRecipients(org.organizationId, assigneeIds, { projectId })
       : Promise.resolve(null),
   ])
 
-  const validAssigneeIds: string[] = validMembers
-    ? validMembers.map((m) => m.userId)
-    : [org.user.id]
+  const validAssigneeIds: string[] = validRecipientIds ?? [org.user.id]
   const connectAssignees = { connect: validAssigneeIds.map((id) => ({ id })) }
 
   const initialColumnId = columnId ?? "todo"
@@ -88,11 +84,8 @@ export async function POST(
     (id) => id !== org.user.id && !assignedUserIds.includes(id),
   )
 
-  const mentionedMembers = mentionedUserIds.length
-    ? await prisma.member.findMany({
-        where: { organizationId: org.organizationId, userId: { in: mentionedUserIds } },
-        select: { userId: true },
-      })
+  const mentionRecipients = mentionedUserIds.length
+    ? await resolveMentionRecipients(org.organizationId, mentionedUserIds, { projectId })
     : []
 
   await createNotifications([
@@ -102,8 +95,8 @@ export async function POST(
       message: `${inviterName} assigned you to "${task.title}"`,
       link: taskLink,
     })),
-    ...mentionedMembers.map((m) => ({
-      userId: m.userId,
+    ...mentionRecipients.map((userId) => ({
+      userId,
       type: "task_mention" as const,
       message: `${inviterName} mentioned you in "${task.title}"`,
       link: taskLink,

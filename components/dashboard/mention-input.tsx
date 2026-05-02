@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useOrgMembers } from "@/lib/store"
 import { cn } from "@/lib/utils"
+import { displayName } from "@/lib/user-display"
 
 type InputProps = React.ComponentProps<typeof Input>
 
@@ -12,16 +13,17 @@ interface MentionInputProps extends Omit<InputProps, "value" | "onChange" | "onK
   value: string
   onChange: (value: string) => void
   onSubmit?: () => void
+  projectId?: string
 }
 
 export const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(function MentionInput(
-  { value, onChange, onSubmit, className, disabled, ...rest },
+  { value, onChange, onSubmit, projectId, className, disabled, ...rest },
   ref,
 ) {
   const inputRef = useRef<HTMLInputElement>(null)
   useImperativeHandle(ref, () => inputRef.current as HTMLInputElement, [])
 
-  const { members } = useOrgMembers()
+  const { members } = useOrgMembers(projectId)
   const [query, setQuery] = useState<string | null>(null)
   const [triggerStart, setTriggerStart] = useState(-1)
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -134,7 +136,7 @@ export const MentionInput = forwardRef<HTMLInputElement, MentionInputProps>(func
                   {(item.name?.[0] || item.email[0]).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span className="flex-1 truncate">{item.name || item.email.split("@")[0]}</span>
+              <span className="flex-1 truncate">{displayName(item)}</span>
             </button>
           ))}
         </div>

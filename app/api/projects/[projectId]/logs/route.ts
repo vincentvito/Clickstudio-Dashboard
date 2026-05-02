@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma"
 import { requireOrg, unauthorized } from "@/lib/api-auth"
 import { extractMentionedUserIds } from "@/lib/mentions"
 import { createNotifications } from "@/lib/notifications"
+import { resolveMentionRecipients } from "@/lib/mention-recipients"
 
 export async function POST(
   req: NextRequest,
@@ -38,15 +39,14 @@ export async function POST(
   })
 
   const mentionedIds = extractMentionedUserIds(trimmed).filter((id) => id !== org.user.id)
-  if (mentionedIds.length > 0) {
-    const validMembers = await prisma.member.findMany({
-      where: { organizationId: org.organizationId, userId: { in: mentionedIds } },
-      select: { userId: true },
-    })
+  const recipients = await resolveMentionRecipients(org.organizationId, mentionedIds, {
+    projectId,
+  })
+  if (recipients.length > 0) {
     const authorName = org.user.name || org.user.email
     await createNotifications(
-      validMembers.map((m) => ({
-        userId: m.userId,
+      recipients.map((userId) => ({
+        userId,
         type: "log_mention",
         message: `${authorName} mentioned you in an update on "${project.title}"`,
         link: `/dashboard/${projectId}?tab=log`,

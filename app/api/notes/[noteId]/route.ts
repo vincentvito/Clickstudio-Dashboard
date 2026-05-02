@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma"
 import { requireOrg, unauthorized } from "@/lib/api-auth"
 import { diffMentions } from "@/lib/mentions"
 import { createNotifications } from "@/lib/notifications"
+import { resolveMentionRecipients } from "@/lib/mention-recipients"
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ noteId: string }> }) {
   const org = await requireOrg()
@@ -27,7 +28,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ no
       ...(body.content !== undefined && { content: body.content }),
     },
     include: {
-      author: { select: { id: true, name: true, email: true, image: true } },
+      author: { select: { id: true, name: true, email: true, image: true, isAgent: true } },
     },
   })
 
@@ -36,15 +37,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ no
     const newMentionIds = diffMentions(note.content, body.content).filter(
       (id) => id !== org.user.id,
     )
-    if (newMentionIds.length > 0) {
-      const validMembers = await prisma.member.findMany({
-        where: { organizationId: org.organizationId, userId: { in: newMentionIds } },
-        select: { userId: true },
-      })
+    const recipients = await resolveMentionRecipients(org.organizationId, newMentionIds, {
+      projectId: note.projectId,
+    })
+    if (recipients.length > 0) {
       const authorName = org.user.name || org.user.email
       await createNotifications(
-        validMembers.map((m) => ({
-          userId: m.userId,
+        recipients.map((userId) => ({
+          userId,
           type: "note_mention",
           message: `${authorName} mentioned you in "${updated.title}"`,
           link: `/dashboard/${updated.projectId}?tab=notes&note=${updated.id}`,

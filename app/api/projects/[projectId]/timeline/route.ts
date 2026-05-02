@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma"
 import { requireOrg, unauthorized } from "@/lib/api-auth"
 import { stateFromPrisma } from "@/lib/enum-map"
 
-const USER_SELECT = { id: true, name: true, email: true, image: true }
+const USER_SELECT = { id: true, name: true, email: true, image: true, isAgent: true }
 
 export async function GET(
   _req: NextRequest,

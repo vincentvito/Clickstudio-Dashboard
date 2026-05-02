@@ -240,9 +240,12 @@ export async function createLog(projectId: string, text: string): Promise<LogEnt
 
 // ─── Members ────────────────────────────────────────────
 
-export function useOrgMembers() {
+export function useOrgMembers(projectId?: string) {
+  const key = projectId
+    ? `/api/org/members/list?projectId=${encodeURIComponent(projectId)}`
+    : "/api/org/members/list"
   const { data, isLoading } = useSWR<(UserSummary & { role: string })[]>(
-    "/api/org/members/list",
+    key,
     fetcher,
   )
   return { members: data ?? [], isLoading }

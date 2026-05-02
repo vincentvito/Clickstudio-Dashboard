@@ -15,6 +15,7 @@ model User {
   email             String
   emailVerified     Boolean                  @default(false)
   image             String?
+  isAgent           Boolean                  @default(false)
   createdAt         DateTime                 @default(now())
   updatedAt         DateTime                 @updatedAt
   sessions          Session[]
@@ -29,6 +30,8 @@ model User {
   taskTransitions   TaskTransition[]
   ideas             Idea[]
   pushSubscriptions PushSubscription[]
+  agentTokens       AgentToken[]             @relation("AgentTokenUser")
+  createdAgentTokens AgentToken[]            @relation("AgentTokenCreator")
 
   @@unique([email])
   @@map("user")
@@ -97,6 +100,7 @@ model Organization {
   invitations Invitation[]
   projects    Project[]
   ideas       Idea[]
+  agentTokens AgentToken[]
 
   @@map("organization")
 }
@@ -264,6 +268,35 @@ model Note {
 
   @@index([projectId])
   @@map("note")
+}
+
+// ─── Agent Tokens ───────────────────────────────────────
+
+model AgentToken {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Synthetic agent user — every action by this token is attributed here
+  agentUserId String @unique
+  agentUser   User   @relation("AgentTokenUser", fields: [agentUserId], references: [id], onDelete: Cascade)
+
+  name        String   // human label, e.g. "claude-local"
+  tokenHash   String   @unique // sha256 of full token
+  tokenPrefix String   // first 12 chars (incl. "ccs_") for UI display
+  scopes      String[] // ["org:read","projects:read","projects:write","tasks:read","tasks:write","logs:write"]
+  projectIds  String[] @default([]) // empty = all projects in org
+
+  createdByUserId String
+  createdBy       User   @relation("AgentTokenCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([organizationId])
+  @@map("agent_token")
 }
 
 // ─── Push Notifications ─────────────────────────────────

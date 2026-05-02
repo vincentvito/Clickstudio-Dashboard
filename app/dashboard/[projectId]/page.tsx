@@ -259,6 +259,7 @@ export default function ProjectPage() {
           {TASK_SECTIONS.map((section) => (
             <KanbanBoard
               key={section}
+              projectId={project.id}
               tasks={tasks}
               section={section}
               onAddTask={handleAddTask}
@@ -280,7 +281,12 @@ export default function ProjectPage() {
         </TabsContent>
 
         <TabsContent value="log" className="flex-1 overflow-auto p-4 sm:p-6">
-          <DailyLog logs={logs} onAdd={handleAddLog} isLoading={isLoading} />
+          <DailyLog
+            logs={logs}
+            onAdd={handleAddLog}
+            projectId={project.id}
+            isLoading={isLoading}
+          />
         </TabsContent>
 
         <TabsContent value="timeline" className="flex-1 overflow-auto p-4 sm:p-6">

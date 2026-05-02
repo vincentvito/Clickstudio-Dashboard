@@ -41,6 +41,7 @@ import { useOrgMembers } from "@/lib/store"
 import { SECTION_CONFIG } from "@/lib/constants"
 import type { Task, TaskSection } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { displayName } from "@/lib/user-display"
 import { Plus, Trash2, UserCircle, Loader2, Check } from "lucide-react"
 
 const COLUMNS: { id: string; name: string; color: KanbanBoardCircleColor }[] = [
@@ -50,6 +51,7 @@ const COLUMNS: { id: string; name: string; color: KanbanBoardCircleColor }[] = [
 ]
 
 interface KanbanBoardProps {
+  projectId: string
   tasks: Task[]
   section: TaskSection
   onAddTask: (section: TaskSection, columnId: string, title: string, assigneeIds?: string[]) => void
@@ -61,6 +63,7 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({
+  projectId,
   tasks,
   section,
   onAddTask,
@@ -72,7 +75,7 @@ export function KanbanBoard({
 }: KanbanBoardProps) {
   const filtered = useMemo(() => tasks.filter((t) => t.section === section), [tasks, section])
   const sectionConfig = SECTION_CONFIG[section]
-  const { members } = useOrgMembers()
+  const { members } = useOrgMembers(projectId)
 
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [hasEverEdited, setHasEverEdited] = useState(false)
@@ -220,14 +223,14 @@ export function KanbanBoard({
                                       </AvatarFallback>
                                     </Avatar>
                                   </TooltipTrigger>
-                                  <TooltipContent>{a.name || a.email}</TooltipContent>
+                                  <TooltipContent>{displayName(a)}</TooltipContent>
                                 </Tooltip>
                               ))}
                             </div>
                             <span className="text-muted-foreground truncate text-[11px]">
                               {task.assignees
                                 .slice(0, 2)
-                                .map((a) => a.name || a.email.split("@")[0])
+                                .map((a) => displayName(a))
                                 .join(", ")}
                               {task.assignees.length > 2 && ` +${task.assignees.length - 2}`}
                             </span>
@@ -286,7 +289,7 @@ export function KanbanBoard({
                                     {newAssigneeIds
                                       .map((id) => {
                                         const m = members.find((m) => m.id === id)
-                                        return m?.name || m?.email?.split("@")[0] || "?"
+                                        return m ? displayName(m) : "?"
                                       })
                                       .join(", ")}
                                   </span>
@@ -318,7 +321,7 @@ export function KanbanBoard({
                                       </AvatarFallback>
                                     </Avatar>
                                     <span className="flex-1 truncate text-sm">
-                                      {m.name || m.email.split("@")[0]}
+                                      {displayName(m)}
                                     </span>
                                     {selected && <Check className="text-primary size-3.5" />}
                                   </div>

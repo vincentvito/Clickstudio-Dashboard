@@ -26,7 +26,9 @@ import {
   Mail,
   X,
   Check,
+  KeyRound,
 } from "lucide-react"
+import Link from "next/link"
 
 const ROLE_CONFIG = {
   owner: { label: "Owner", icon: Crown, color: "text-amber-400" },
@@ -208,8 +210,20 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-8">
-      <h1 className="mb-1 text-lg font-bold tracking-tight">Admin</h1>
-      <p className="text-muted-foreground mb-6 text-sm">Manage members and roles for {org.name}</p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="mb-1 text-lg font-bold tracking-tight">Admin</h1>
+          <p className="text-muted-foreground text-sm">
+            Manage members and roles for {org.name}
+          </p>
+        </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/dashboard/admin/agent-tokens">
+            <KeyRound className="size-3.5" />
+            Agent tokens
+          </Link>
+        </Button>
+      </div>
 
       {/* Profile */}
       <div className="mb-6">

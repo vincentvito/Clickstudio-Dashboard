@@ -4,7 +4,7 @@ import { findIdeaNames } from "@/lib/ai/name-finder-agent"
 const NAME_FINDER_TIMEOUT_MS = 55_000
 
 const ideaInclude = {
-  user: { select: { id: true, name: true, email: true, image: true } },
+  user: { select: { id: true, name: true, email: true, image: true, isAgent: true } },
   promotedToProject: { select: { id: true, title: true } },
   nameSuggestions: { orderBy: { position: "asc" as const } },
 }

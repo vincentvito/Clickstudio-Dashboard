@@ -14,6 +14,7 @@ import { mentionTextToHtml } from "@/lib/mentions"
 interface TiptapEditorProps {
   value: string
   onChange: (value: string) => void
+  projectId?: string
   placeholder?: string
   className?: string
   autoFocus?: boolean
@@ -51,11 +52,12 @@ function serializeDoc(doc: any): string {
 export function TiptapEditor({
   value,
   onChange,
+  projectId,
   placeholder,
   className,
   autoFocus,
 }: TiptapEditorProps) {
-  const { members } = useOrgMembers()
+  const { members } = useOrgMembers(projectId)
   const membersRef = useRef<MentionItem[]>([])
   membersRef.current = members
 

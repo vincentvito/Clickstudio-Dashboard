@@ -7,6 +7,7 @@ import { taskColumnLabel, PROJECT_STATE_CONFIG } from "@/lib/constants"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { ProjectState } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { displayName } from "@/lib/user-display"
 
 interface ProjectTimelineProps {
   projectId: string
@@ -96,7 +97,7 @@ function TimelineRow({
   entry: TimelineEntry
   durationMs: number | null
 }) {
-  const actorName = entry.user?.name || entry.user?.email || "System"
+  const actorName = entry.user ? displayName(entry.user) : "System"
 
   return (
     <div className="flex items-baseline justify-between gap-3">

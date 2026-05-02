@@ -17,10 +17,10 @@ export async function GET(
     include: {
       tasks: {
         orderBy: { position: "asc" },
-        include: { assignees: { select: { id: true, name: true, email: true, image: true } } },
+        include: { assignees: { select: { id: true, name: true, email: true, image: true, isAgent: true } } },
       },
       logs: { orderBy: { createdAt: "desc" } },
-      user: { select: { id: true, name: true, email: true, image: true } },
+      user: { select: { id: true, name: true, email: true, image: true, isAgent: true } },
     },
   })
 

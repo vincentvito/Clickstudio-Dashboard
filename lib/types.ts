@@ -7,6 +7,7 @@ export interface UserSummary {
   name: string | null
   email: string
   image: string | null
+  isAgent?: boolean
 }
 
 export interface Project {
