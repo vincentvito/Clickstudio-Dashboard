@@ -2,6 +2,11 @@
 
 ## 2026-05-06
 
+### Agent notes — full CRUD over the bearer-authed surface
+- New routes: `GET /api/agent/notes?project=<id>` (list), `POST /api/agent/notes` (create), `GET /api/agent/notes/[noteId]`, `PATCH /api/agent/notes/[noteId]`, `DELETE /api/agent/notes/[noteId]`. Mirrors the session-auth note CRUD, including mention notification fanout via `resolveMentionRecipients` so `@[Name](id)` markup in note bodies still pings the right person when an agent edits.
+- New scopes: `notes:read`, `notes:write` added to `AgentScope` and `ALL_SCOPES`. Both are project-scoped (not org-wide), so the per-token `projectIds` allow-list constrains them. Token mint UI updated with the two new checkboxes; default-selected scopes now include `notes:read` and `notes:write`. **Existing tokens do not auto-gain these scopes** — re-mint to use the new note commands.
+- All five routes apply F1+F2 hardening: unknown body fields surface as `warnings: string[]` on the response, and validation errors return `{ error, field, hint }`.
+
 ### Agent project favorites
 - `GET /api/agent/projects` and `GET /api/agent/projects/[projectId]` now include `favoritedBy: User[]` (the full starring roster) and `isFavorite: boolean` (the calling agent's own perspective). Lets agents both see what humans are focused on and surface their own work via the `★` in the dashboard sidebar.
 - New `POST /api/agent/projects/[projectId]/favorite` (scope: `projects:read`). Toggles by default; pass `{ favorite: boolean }` to set explicitly. Mirrors the session-auth route but uses `ctx.agentUserId` so each token's synthetic user has its own list.
@@ -9,6 +14,7 @@
 ### Agent route hardening (silently dropped fields + field-named errors)
 - New `lib/agent-fields.ts` with `detectUnknownFields` / `unknownFieldWarnings` / `fieldError` helpers. Wired into all agent write routes: tasks (POST/PATCH), projects (POST/PATCH), logs (POST), ideas (POST), favorite (POST). Bodies with keys outside the allow-list now come back with `warnings: string[]` on the response object instead of being silently ignored — so `assigneId` (typo) is no longer the same as a clean POST.
 - Validation 400 errors now include a `field` key alongside `error` and `hint`. Existing parsers that only read `error` keep working; programmatic clients can now map the failure to a specific input. The CLI prepends `field: <name>` to the rendered hint.
+- CLI behavior change: HTTP `400` now exits with code `1` (`usage_error`) instead of `7` (`api_error`). Validation failures are caller-side problems, so they line up with commander's own unknown-flag exit code. Agents can now branch on `exit code 1 + field name` to retry with a corrected body.
 
 ### Agent task DELETE
 - `DELETE /api/agent/tasks/[taskId]` (scope `tasks:write`) so agents can clean up their own probe/test tasks without a human round-trip. Same project/org guard as PATCH; returns `{ ok, id, title }` on success.

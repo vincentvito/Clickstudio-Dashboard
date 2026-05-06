@@ -11,6 +11,8 @@ export type AgentScope =
   | "logs:write"
   | "ideas:read"
   | "ideas:write"
+  | "notes:read"
+  | "notes:write"
 
 export const ALL_SCOPES: AgentScope[] = [
   "org:read",
@@ -21,6 +23,8 @@ export const ALL_SCOPES: AgentScope[] = [
   "logs:write",
   "ideas:read",
   "ideas:write",
+  "notes:read",
+  "notes:write",
 ]
 
 // Scopes that operate on org-level resources and ignore the per-token

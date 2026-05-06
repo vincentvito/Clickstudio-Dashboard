@@ -120,6 +120,22 @@ Items grouped by area, with rough effort tags: `S` ≤ ½ day, `M` ½–1 day,
   write routes now use `fieldError(field, message, hint?)`. CLI surfaces
   the field name in the rendered hint (`field: title — title is required`).
 
+### G. Notes — full CRUD on the bearer surface (Batch 5, post-Rolino feedback)
+
+- [x] **G1 [M] — Backend agent note routes.** New
+  `/api/agent/notes` (GET list, POST create) and `/api/agent/notes/[noteId]`
+  (GET, PATCH, DELETE), mirroring the session-auth shape. Mention
+  notifications fan out via `resolveMentionRecipients`. F1+F2 hardened.
+- [x] **G2 [S] — New scopes.** `notes:read` and `notes:write` added to
+  `AgentScope` / `ALL_SCOPES`, marked project-scoped. Existing tokens
+  must be re-minted to gain access.
+- [x] **G3 [S] — Token mint UI.** Two new scope checkboxes, included in
+  the default-selected set so new tokens get notes access by default.
+- [x] **G4 [M] — CLI `notes` command group.** `list`, `get`, `create`,
+  `update`, `delete` (with `rm` alias), all accepting `<ref>` as ID or
+  title scoped by `--project`. Reuses the same project resolver as other
+  commands.
+
 ## Suggested order
 
 Ship in batches so we can dogfood between rounds.
