@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:better-auth.com)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(ccctl doctor *)",
+      "Bash(ccctl projects *)"
     ]
   }
 }

@@ -32,6 +32,7 @@ model User {
   pushSubscriptions PushSubscription[]
   agentTokens       AgentToken[]             @relation("AgentTokenUser")
   createdAgentTokens AgentToken[]            @relation("AgentTokenCreator")
+  favoriteProjects  Project[]                @relation("ProjectFavorites")
 
   @@unique([email])
   @@map("user")
@@ -160,6 +161,7 @@ model Project {
   notes            Note[]
   transitions      ProjectStateTransition[]
   promotedFromIdea Idea?
+  favoritedBy      User[]                   @relation("ProjectFavorites")
 
   @@index([organizationId])
   @@index([userId])

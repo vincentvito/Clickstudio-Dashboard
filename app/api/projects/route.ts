@@ -15,14 +15,16 @@ export async function GET() {
       },
       logs: { orderBy: { createdAt: "desc" }, take: 1 },
       user: { select: { id: true, name: true, email: true, image: true, isAgent: true } },
+      favoritedBy: { where: { id: org.user.id }, select: { id: true } },
     },
     orderBy: { createdAt: "desc" },
   })
 
-  const mapped = projects.map((p) => ({
+  const mapped = projects.map(({ favoritedBy, ...p }) => ({
     ...p,
     state: stateFromPrisma(p.state),
     tasks: p.tasks.map((t) => ({ ...t, section: t.section as string })),
+    isFavorite: favoritedBy.length > 0,
   }))
 
   return Response.json(mapped)

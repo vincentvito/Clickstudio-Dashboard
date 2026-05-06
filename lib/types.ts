@@ -18,6 +18,7 @@ export interface Project {
   state: ProjectState
   createdAt: string
   user?: UserSummary
+  isFavorite?: boolean
 }
 
 export interface Task {

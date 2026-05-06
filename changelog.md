@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-05-06
+
+### Project favorites — pin what you're working on
+- New per-user favorites: implicit many-to-many `Project.favoritedBy` ↔ `User.favoriteProjects` Prisma relation + migration `20260506120000_add_project_favorites` (`_ProjectFavorites` join table, cascade on either side). No new model — just the join.
+- `GET /api/projects` now returns `isFavorite: boolean` per project, scoped to the current session user via a filtered `favoritedBy` include. New `POST /api/projects/[projectId]/favorite` toggles (or sets, with `{ favorite: boolean }`). Org-membership scoped — agents and other org members keep their own favorite lists.
+- Sidebar splits the project list into a "Favorites" group above the regular "Projects" group. Each row gets a star action via `SidebarMenuAction`: hover-only on non-favorites, always-on and yellow-filled on favorites. Optimistic toggle through new `toggleProjectFavorite` in `lib/store.tsx`. Task-count badge shifts to `right-7` so it doesn't collide with the star slot.
+
 ## 2026-05-02
 
 ### Agent tokens — bearer auth for AI agents and CLIs

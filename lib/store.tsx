@@ -154,6 +154,23 @@ export async function updateProject(id: string, updates: Partial<Project>) {
   }
 }
 
+export async function toggleProjectFavorite(id: string, next: boolean) {
+  mutate(
+    "/api/projects",
+    (current: ProjectWithRelations[] | undefined) =>
+      current?.map((p) => (p.id === id ? { ...p, isFavorite: next } : p)),
+    { revalidate: false },
+  )
+  try {
+    await api(`/api/projects/${id}/favorite`, "POST", { favorite: next })
+    mutate("/api/projects")
+  } catch (e: any) {
+    mutate("/api/projects")
+    toast.error(e.message ?? "Failed to update favorite")
+    throw e
+  }
+}
+
 export async function deleteProject(id: string) {
   try {
     await api(`/api/projects/${id}`, "DELETE")

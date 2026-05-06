@@ -12,6 +12,7 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -26,7 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { useProjects, useOrgMembers } from "@/lib/store"
+import { useProjects, useOrgMembers, toggleProjectFavorite } from "@/lib/store"
 import { useSession, signOut } from "@/lib/auth-client"
 import { PROJECT_STATE_CONFIG } from "@/lib/constants"
 import { cn } from "@/lib/utils"
@@ -39,6 +40,7 @@ import {
   Users,
   Sparkles,
   Lightbulb,
+  Star,
 } from "lucide-react"
 import { BrandMark } from "@/components/brand-mark"
 import { APP_VERSION } from "@/lib/changelog"
@@ -53,6 +55,16 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
   const { data: session } = useSession()
   const pathname = usePathname()
   const router = useRouter()
+
+  const { favoriteProjects, otherProjects } = useMemo(() => {
+    const favs: typeof projects = []
+    const rest: typeof projects = []
+    for (const p of projects) {
+      if (p.isFavorite) favs.push(p)
+      else rest.push(p)
+    }
+    return { favoriteProjects: favs, otherProjects: rest }
+  }, [projects])
 
   const user = session?.user
   const initials = user?.name
@@ -160,6 +172,24 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
 
         <SidebarSeparator />
 
+        {/* Favorites */}
+        {favoriteProjects.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Favorites</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {favoriteProjects.map((project) => (
+                  <ProjectMenuItem
+                    key={project.id}
+                    project={project}
+                    isActive={pathname === `/dashboard/${project.id}`}
+                  />
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
         {/* Project list */}
         <SidebarGroup>
           <SidebarGroupLabel>Projects</SidebarGroupLabel>
@@ -170,28 +200,13 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
                   No projects yet
                 </p>
               )}
-              {projects.map((project) => {
-                const isActive = pathname === `/dashboard/${project.id}`
-                const stateConfig = PROJECT_STATE_CONFIG[project.state]
-                const taskCount = (project as any).tasks?.length ?? 0
-
-                return (
-                  <SidebarMenuItem key={project.id}>
-                    <SidebarMenuButton asChild isActive={isActive} tooltip={project.title}>
-                      <Link href={`/dashboard/${project.id}`}>
-                        <span
-                          className={cn(
-                            "size-2 shrink-0 rotate-45 rounded-sm",
-                            stateConfig.color.replace("text-", "bg-"),
-                          )}
-                        />
-                        <span>{project.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                    {taskCount > 0 && <SidebarMenuBadge>{taskCount}</SidebarMenuBadge>}
-                  </SidebarMenuItem>
-                )
-              })}
+              {otherProjects.map((project) => (
+                <ProjectMenuItem
+                  key={project.id}
+                  project={project}
+                  isActive={pathname === `/dashboard/${project.id}`}
+                />
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -274,5 +289,49 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
+  )
+}
+
+function ProjectMenuItem({
+  project,
+  isActive,
+}: {
+  project: { id: string; title: string; state: keyof typeof PROJECT_STATE_CONFIG; isFavorite?: boolean }
+  isActive: boolean
+}) {
+  const stateConfig = PROJECT_STATE_CONFIG[project.state]
+  const taskCount = (project as any).tasks?.length ?? 0
+  const isFavorite = project.isFavorite ?? false
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton asChild isActive={isActive} tooltip={project.title}>
+        <Link href={`/dashboard/${project.id}`}>
+          <span
+            className={cn(
+              "size-2 shrink-0 rotate-45 rounded-sm",
+              stateConfig.color.replace("text-", "bg-"),
+            )}
+          />
+          <span>{project.title}</span>
+        </Link>
+      </SidebarMenuButton>
+      <SidebarMenuAction
+        showOnHover={!isFavorite}
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          void toggleProjectFavorite(project.id, !isFavorite)
+        }}
+        aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+        title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+        className={cn(isFavorite && "text-yellow-500 hover:text-yellow-500")}
+      >
+        <Star className={cn(isFavorite && "fill-current")} />
+      </SidebarMenuAction>
+      {taskCount > 0 && (
+        <SidebarMenuBadge className="right-7">{taskCount}</SidebarMenuBadge>
+      )}
+    </SidebarMenuItem>
   )
 }
