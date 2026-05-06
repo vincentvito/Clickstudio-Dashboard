@@ -2,6 +2,15 @@
 
 ## 2026-05-06
 
+### Agent task DELETE
+- `DELETE /api/agent/tasks/[taskId]` (scope `tasks:write`) so agents can clean up their own probe/test tasks without a human round-trip. Same project/org guard as PATCH; returns `{ ok, id, title }` on success.
+
+### Agent task assignment via bearer-authed CLI
+- `POST /api/agent/tasks` and `PATCH /api/agent/tasks/[taskId]` now accept `assigneeIds: string[]`. IDs are validated through `resolveMentionRecipients` so callers can't assign across orgs or to expired/revoked agents. PATCH does full-set replace (matches the session-auth route); the CLI handles add/remove via read-modify-write so the API surface stays minimal.
+- POST defaults `assignToSelf` to `false` when explicit `assigneeIds` are present (and `true` otherwise) so agents don't unexpectedly piggyback themselves onto a delegation. Callers can re-add self by passing `assignToSelf: true` or by including their own ID in the array.
+- Both routes now fire `task_assigned` notifications for newly added assignees, with a dedupe so anyone who is both `@`-mentioned in the description *and* assigned in the same write only gets one notification (`task_assigned` wins). Mirrors the session-auth task routes.
+- New bearer-authed `GET /api/agent/members` (scope: `org:read`). Returns the same `[{id,name,email,image,isAgent,role}]` shape as the session-only `/api/org/members/list` so the CLI can resolve `@vlad`-style aliases without a session cookie. Filters expired/revoked agent tokens; dedupes if an agent user has multiple tokens.
+
 ### Project favorites — pin what you're working on
 - New per-user favorites: implicit many-to-many `Project.favoritedBy` ↔ `User.favoriteProjects` Prisma relation + migration `20260506120000_add_project_favorites` (`_ProjectFavorites` join table, cascade on either side). No new model — just the join.
 - `GET /api/projects` now returns `isFavorite: boolean` per project, scoped to the current session user via a filtered `favoritedBy` include. New `POST /api/projects/[projectId]/favorite` toggles (or sets, with `{ favorite: boolean }`). Org-membership scoped — agents and other org members keep their own favorite lists.

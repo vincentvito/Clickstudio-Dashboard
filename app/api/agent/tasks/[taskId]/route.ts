@@ -166,3 +166,29 @@ export async function PATCH(
     updatedAt: updated.updatedAt,
   })
 }
+
+// DELETE: agents need this to clean up their own probe/test tasks. Required
+// scope is `tasks:write` (same as PATCH) — there's no separate "delete" scope
+// in the coarse set, and elevating delete past write would surprise CLI users.
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ taskId: string }> },
+) {
+  const ctx = await requireAgent(req, "tasks:write")
+  if (isAgentResponse(ctx)) return ctx
+
+  const { taskId } = await params
+
+  const task = await prisma.task.findFirst({
+    where: { id: taskId, project: { organizationId: ctx.organizationId } },
+    select: { id: true, projectId: true, title: true },
+  })
+
+  if (!task || !canAccessProject(ctx, task.projectId)) {
+    return Response.json({ error: "Not found" }, { status: 404 })
+  }
+
+  await prisma.task.delete({ where: { id: taskId } })
+
+  return Response.json({ ok: true, id: task.id, title: task.title })
+}

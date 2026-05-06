@@ -31,23 +31,23 @@ Items grouped by area, with rough effort tags: `S` ≤ ½ day, `M` ½–1 day,
 
 ### A. Assignee support — primary ask from Rolino
 
-- [ ] **A1 [M] — Backend audit + fix: agent task routes honour `assigneeIds`.**
+- [x] **A1 [M] — Backend audit + fix: agent task routes honour `assigneeIds`.**
   Confirm `POST /api/agent/tasks` and `PATCH /api/agent/tasks/[taskId]`
   actually accept `assigneeIds: string[]` and that the IDs are validated as
   members of the same org (no cross-org assignment, no arbitrary userId
   acceptance). If they currently drop the field silently, fix.
-- [ ] **A2 [S] — Backend: new `GET /api/agent/members`.** Bearer-authed mirror of
+- [x] **A2 [S] — Backend: new `GET /api/agent/members`.** Bearer-authed mirror of
   `/api/org/members/list`. Returns members + active (non-revoked,
   non-expired) agents. Required scope: `org:read`. Excludes private fields.
-- [ ] **A3 [S] — CLI: `tasks create --assignee @handle` / `--assignee-id <id>`.**
+- [x] **A3 [S] — CLI: `tasks create --assignee @handle` / `--assignee-id <id>`.**
   Repeatable flags. Resolves `@handle` via `/api/agent/members`.
   Implicit: if any `--assignee` flag is given, do not auto-add self
   (current `--no-assign-self` becomes redundant; keep as a no-op alias for
   one release).
-- [ ] **A4 [S] — CLI: `tasks update --assignee` (replace) /
+- [x] **A4 [S] — CLI: `tasks update --assignee` (replace) /
   `--add-assignee` / `--remove-assignee` (mutate).** Mirrors
   `gh pr edit --add-reviewer`/`--remove-reviewer` semantics.
-- [ ] **A5 [S] — CLI: alias resolver.** Resolution order:
+- [x] **A5 [S] — CLI: alias resolver.** Resolution order:
   1. Exact `id` match (full userId).
   2. Case-insensitive exact `name`.
   3. Email local-part, including dot/dash/underscore-split chunks
@@ -55,13 +55,11 @@ Items grouped by area, with rough effort tags: `S` ≤ ½ day, `M` ½–1 day,
   4. Case-insensitive unique prefix on `name` ≥ 3 chars.
   5. Fail with candidate list. **Never** silently pick.
   Cache the members response for the lifetime of one CLI invocation.
-- [ ] **A6 [open question] — Auto-promote `@handle` in description text.**
-  Should the agent API parse `@vlad` in plaintext descriptions and promote
-  it to a mention + assignment? Pro: matches what agents already write.
-  Con: brittle, surprising, conflicts with explicit `--assignee` flags.
-  Recommendation: **no** — instead surface a warning when a write contains
-  `@word` patterns but no `assigneeIds` are set ("did you mean
-  `--assignee`?"). Decide before A3/A4 ship.
+- [x] **A6 [decided: warn, do not auto-promote] — `@handle` in description.**
+  Decision: keep `--assignee` canonical and warn when a write contains plain
+  `@word` patterns without `--assignee`. Implemented as a CLI-side check via
+  `findPlainHandles` + `notice` field; the regex skips emails (`a@b.com`)
+  and tiptap markup (`@[Name](id)`). No backend change.
 
 ### B. Discovery without memorised IDs
 
