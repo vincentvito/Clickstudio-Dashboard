@@ -60,6 +60,7 @@ export async function PATCH(
 
   const task = await prisma.task.findFirst({
     where: { id: taskId, project: { organizationId: ctx.organizationId } },
+    include: { assignees: { select: { id: true } } },
   })
 
   if (!task || !canAccessProject(ctx, task.projectId)) {
@@ -72,6 +73,27 @@ export async function PATCH(
   const nextColumnId: string | undefined = body.columnId ?? body.status
   const columnChanged = nextColumnId !== undefined && nextColumnId !== task.columnId
 
+  // Assignee replacement: full-set replace via `assigneeIds`, mirroring the
+  // session-auth PATCH route. The CLI does read-modify-write for additive
+  // semantics (--add-assignee / --remove-assignee), so we don't need to
+  // expose those server-side.
+  const rawAssigneeIds: unknown = body.assigneeIds
+  const hasAssigneeUpdate =
+    Array.isArray(rawAssigneeIds) && rawAssigneeIds.every((v) => typeof v === "string")
+
+  let assigneesUpdate: { assignees: { set: { id: string }[] } } | undefined
+  let newlyAssigned: string[] = []
+  if (hasAssigneeUpdate) {
+    const validIds = await resolveMentionRecipients(
+      ctx.organizationId,
+      rawAssigneeIds as string[],
+      { projectId: task.projectId },
+    )
+    assigneesUpdate = { assignees: { set: validIds.map((id) => ({ id })) } }
+    const existingIds = new Set(task.assignees.map((a) => a.id))
+    newlyAssigned = validIds.filter((id) => !existingIds.has(id) && id !== ctx.agentUserId)
+  }
+
   const updated = await prisma.$transaction(async (tx) => {
     const result = await tx.task.update({
       where: { id: taskId },
@@ -81,6 +103,7 @@ export async function PATCH(
         ...(nextColumnId !== undefined && { columnId: nextColumnId }),
         ...(body.section !== undefined && { section: body.section as never }),
         ...(body.position !== undefined && { position: body.position }),
+        ...assigneesUpdate,
       },
       include: { assignees: { select: ASSIGNEE_SELECT } },
     })
@@ -97,27 +120,39 @@ export async function PATCH(
     return result
   })
 
-  // Notify newly @-mentioned recipients in description edits — same shape as
-  // the session-auth task PATCH route.
+  // Notifications: task_assigned for newly added assignees, task_mention for
+  // anyone newly @-mentioned in the description who isn't already being
+  // assigned in this same patch (avoids double-notifying).
+  const actorName = `\u{1F916} ${ctx.agentName}`
+  const taskLink = `/dashboard/${updated.projectId}?tab=tasks&task=${updated.id}`
+
+  let newlyMentioned: string[] = []
   if (body.description !== undefined && body.description !== task.description) {
-    const newlyMentioned = diffMentions(task.description, body.description).filter(
-      (id) => id !== ctx.agentUserId,
+    newlyMentioned = diffMentions(task.description, body.description).filter(
+      (id) => id !== ctx.agentUserId && !newlyAssigned.includes(id),
     )
-    const recipients = await resolveMentionRecipients(ctx.organizationId, newlyMentioned, {
-      projectId: task.projectId,
-    })
-    if (recipients.length > 0) {
-      const actorName = `\u{1F916} ${ctx.agentName}`
-      const taskLink = `/dashboard/${updated.projectId}?tab=tasks&task=${updated.id}`
-      await createNotifications(
-        recipients.map((userId) => ({
-          userId,
-          type: "task_mention" as const,
-          message: `${actorName} mentioned you in "${updated.title}"`,
-          link: taskLink,
-        })),
-      )
-    }
+  }
+  const mentionRecipients = newlyMentioned.length
+    ? await resolveMentionRecipients(ctx.organizationId, newlyMentioned, {
+        projectId: task.projectId,
+      })
+    : []
+
+  if (newlyAssigned.length > 0 || mentionRecipients.length > 0) {
+    await createNotifications([
+      ...newlyAssigned.map((userId) => ({
+        userId,
+        type: "task_assigned" as const,
+        message: `${actorName} assigned you to "${updated.title}"`,
+        link: taskLink,
+      })),
+      ...mentionRecipients.map((userId) => ({
+        userId,
+        type: "task_mention" as const,
+        message: `${actorName} mentioned you in "${updated.title}"`,
+        link: taskLink,
+      })),
+    ])
   }
 
   return Response.json({

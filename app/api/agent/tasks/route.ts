@@ -90,7 +90,30 @@ export async function POST(req: NextRequest) {
   const description: string = typeof body.description === "string" ? body.description : ""
   const columnId: string = body.columnId ?? body.status ?? "todo"
   const section: string = body.section ?? "Product"
-  const assignToSelf: boolean = body.assignToSelf !== false // default true
+
+  // Assignee resolution rules:
+  //   - If `assigneeIds` is provided, validate it via resolveMentionRecipients
+  //     (drops anyone not in the org / not active). Default `assignToSelf` to
+  //     false in that case so the agent can hand a task off to a human without
+  //     auto-claiming a slot. Caller can still pass `assignToSelf: true` to
+  //     keep itself in the union.
+  //   - If `assigneeIds` is omitted, fall back to the legacy default of
+  //     auto-assigning the agent (matches what early CLI users expect).
+  const rawAssigneeIds: unknown = body.assigneeIds
+  const hasExplicitAssignees =
+    Array.isArray(rawAssigneeIds) && rawAssigneeIds.every((v) => typeof v === "string")
+  const explicitAssignToSelf =
+    typeof body.assignToSelf === "boolean" ? body.assignToSelf : null
+  const assignToSelf = explicitAssignToSelf ?? !hasExplicitAssignees
+
+  const validatedAssigneeIds = hasExplicitAssignees
+    ? await resolveMentionRecipients(ctx.organizationId, rawAssigneeIds as string[], {
+        projectId,
+      })
+    : []
+
+  const finalAssigneeSet = new Set<string>(validatedAssigneeIds)
+  if (assignToSelf) finalAssigneeSet.add(ctx.agentUserId)
 
   const maxPosition = await prisma.task.aggregate({
     where: { projectId, columnId },
@@ -106,8 +129,10 @@ export async function POST(req: NextRequest) {
         section: section as never,
         position: (maxPosition._max.position ?? -1) + 1,
         projectId,
-        ...(assignToSelf && {
-          assignees: { connect: [{ id: ctx.agentUserId }] },
+        ...(finalAssigneeSet.size > 0 && {
+          assignees: {
+            connect: Array.from(finalAssigneeSet).map((id) => ({ id })),
+          },
         }),
       },
       include: { assignees: { select: ASSIGNEE_SELECT } },
@@ -123,26 +148,37 @@ export async function POST(req: NextRequest) {
     return created
   })
 
-  // Mirror the session-auth task endpoint's mention notifications. Without
-  // this, an agent that creates a task with an @-mention in the description
-  // never alerts the mentioned teammate.
+  // Notifications: assignees (other than the actor) get `task_assigned`,
+  // anyone @-mentioned in the description who isn't already being assigned
+  // gets `task_mention` instead — same dedupe shape as the session-auth
+  // POST /api/projects/[projectId]/tasks route.
+  const actorName = `\u{1F916} ${ctx.agentName}`
+  const taskLink = `/dashboard/${projectId}?tab=tasks&task=${task.id}`
+
+  const newlyAssigned = Array.from(finalAssigneeSet).filter((id) => id !== ctx.agentUserId)
+
   const mentionedIds = extractMentionedUserIds(description).filter(
-    (id) => id !== ctx.agentUserId,
+    (id) => id !== ctx.agentUserId && !newlyAssigned.includes(id),
   )
-  const recipients = await resolveMentionRecipients(ctx.organizationId, mentionedIds, {
-    projectId,
-  })
-  if (recipients.length > 0) {
-    const actorName = `\u{1F916} ${ctx.agentName}`
-    const taskLink = `/dashboard/${projectId}?tab=tasks&task=${task.id}`
-    await createNotifications(
-      recipients.map((userId) => ({
+  const mentionRecipients = mentionedIds.length
+    ? await resolveMentionRecipients(ctx.organizationId, mentionedIds, { projectId })
+    : []
+
+  if (newlyAssigned.length > 0 || mentionRecipients.length > 0) {
+    await createNotifications([
+      ...newlyAssigned.map((userId) => ({
+        userId,
+        type: "task_assigned" as const,
+        message: `${actorName} assigned you to "${task.title}"`,
+        link: taskLink,
+      })),
+      ...mentionRecipients.map((userId) => ({
         userId,
         type: "task_mention" as const,
         message: `${actorName} mentioned you in "${task.title}"`,
         link: taskLink,
       })),
-    )
+    ])
   }
 
   return Response.json(
