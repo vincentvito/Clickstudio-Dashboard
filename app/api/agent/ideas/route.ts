@@ -1,8 +1,15 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
 import { requireAgent, isAgentResponse } from "@/lib/agent-auth"
+import {
+  detectUnknownFields,
+  unknownFieldWarnings,
+  fieldError,
+} from "@/lib/agent-fields"
 
 const USER_SELECT = { id: true, name: true, email: true, image: true, isAgent: true } as const
+
+const IDEA_CREATE_FIELDS = ["title", "description", "links"] as const
 
 const VALID_STATUSES = ["Pending", "Promoted", "Archived"] as const
 type IdeaStatus = (typeof VALID_STATUSES)[number]
@@ -54,6 +61,7 @@ export async function POST(req: NextRequest) {
   if (isAgentResponse(ctx)) return ctx
 
   const body = await req.json().catch(() => ({}))
+  const unknownFields = detectUnknownFields(body, IDEA_CREATE_FIELDS)
   const title: string = (body.title ?? "").trim()
   const description: string = (body.description ?? "").trim()
   // Accept either an array of links or a newline-separated string.
@@ -66,7 +74,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!title) {
-    return Response.json({ error: "title is required" }, { status: 400 })
+    return fieldError("title", "title is required")
   }
 
   const idea = await prisma.idea.create({
@@ -86,6 +94,8 @@ export async function POST(req: NextRequest) {
     },
   })
 
+  const warnings = unknownFieldWarnings(unknownFields)
+
   return Response.json(
     {
       id: idea.id,
@@ -96,6 +106,7 @@ export async function POST(req: NextRequest) {
       status: idea.status,
       createdAt: idea.createdAt,
       capturedBy: idea.user,
+      ...(warnings.length > 0 && { warnings }),
     },
     { status: 201 },
   )

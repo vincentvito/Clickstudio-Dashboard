@@ -8,6 +8,17 @@ import {
 import { diffMentions } from "@/lib/mentions"
 import { createNotifications } from "@/lib/notifications"
 import { resolveMentionRecipients } from "@/lib/mention-recipients"
+import { detectUnknownFields, unknownFieldWarnings } from "@/lib/agent-fields"
+
+const TASK_UPDATE_FIELDS = [
+  "title",
+  "description",
+  "columnId",
+  "status",
+  "section",
+  "position",
+  "assigneeIds",
+] as const
 
 const ASSIGNEE_SELECT = {
   id: true,
@@ -68,6 +79,7 @@ export async function PATCH(
   }
 
   const body = await req.json().catch(() => ({}))
+  const unknownFields = detectUnknownFields(body, TASK_UPDATE_FIELDS)
   // Accept "status" as a friendly alias for columnId so CLI users can
   // write `tasks update <id> --status doing` without knowing the schema.
   const nextColumnId: string | undefined = body.columnId ?? body.status
@@ -155,6 +167,8 @@ export async function PATCH(
     ])
   }
 
+  const warnings = unknownFieldWarnings(unknownFields)
+
   return Response.json({
     id: updated.id,
     title: updated.title,
@@ -164,6 +178,7 @@ export async function PATCH(
     position: updated.position,
     assignees: updated.assignees,
     updatedAt: updated.updatedAt,
+    ...(warnings.length > 0 && { warnings }),
   })
 }
 

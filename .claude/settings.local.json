@@ -4,7 +4,13 @@
       "WebFetch(domain:better-auth.com)",
       "Bash(npx tsc:*)",
       "Bash(ccctl doctor *)",
-      "Bash(ccctl projects *)"
+      "Bash(ccctl projects *)",
+      "Bash(ccctl --base-url https://cc.clickstudio.ai tasks get \"Update to latest nextjs\" --project \"Family Photoshoot AI\" --json)",
+      "Bash(python3 -c 'import sys,json; d=json.load\\(sys.stdin\\); print\\(\"ok:\", d[\"ok\"], \"title:\", d[\"data\"][\"title\"], \"id:\", d[\"data\"][\"id\"]\\)')",
+      "Bash(ccctl --base-url https://cc.clickstudio.ai tasks get \"Update to latest nextjs\")",
+      "Bash(ccctl --base-url https://cc.clickstudio.ai tasks get \"card\" --project \"Family Photoshoot AI\")",
+      "Bash(ccctl --base-url https://cc.clickstudio.ai tasks get cmomxhw48000004l197h8jzfh --json)",
+      "Bash(python3 -c 'import sys,json; d=json.load\\(sys.stdin\\); print\\(\"ok:\", d[\"ok\"], \"title:\", d[\"data\"][\"title\"]\\)')"
     ]
   }
 }

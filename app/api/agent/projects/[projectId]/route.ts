@@ -7,8 +7,11 @@ import {
   hasScope,
 } from "@/lib/agent-auth"
 import { stateToPrisma, stateFromPrisma } from "@/lib/enum-map"
+import { detectUnknownFields, unknownFieldWarnings } from "@/lib/agent-fields"
 
 const USER_SELECT = { id: true, name: true, email: true, image: true, isAgent: true } as const
+
+const PROJECT_UPDATE_FIELDS = ["title", "brainDump", "artifactLinks", "state"] as const
 
 export async function GET(
   req: NextRequest,
@@ -31,6 +34,7 @@ export async function GET(
         include: { assignees: { select: USER_SELECT } },
       },
       logs: { orderBy: { createdAt: "desc" }, take: 10 },
+      favoritedBy: { select: USER_SELECT },
     },
   })
 
@@ -47,6 +51,8 @@ export async function GET(
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,
     owner: project.user,
+    favoritedBy: project.favoritedBy,
+    isFavorite: project.favoritedBy.some((u) => u.id === ctx.agentUserId),
     tasks: project.tasks.map((t) => ({
       id: t.id,
       title: t.title,
@@ -80,6 +86,7 @@ export async function PATCH(
   }
 
   const body = await req.json().catch(() => ({}))
+  const unknownFields = detectUnknownFields(body, PROJECT_UPDATE_FIELDS)
   const nextState =
     body.state !== undefined ? (stateToPrisma(body.state) as never) : undefined
   const stateChanged = nextState !== undefined && nextState !== project.state
@@ -107,10 +114,13 @@ export async function PATCH(
     return result
   })
 
+  const warnings = unknownFieldWarnings(unknownFields)
+
   return Response.json({
     id: updated.id,
     title: updated.title,
     state: stateFromPrisma(updated.state),
     updatedAt: updated.updatedAt,
+    ...(warnings.length > 0 && { warnings }),
   })
 }

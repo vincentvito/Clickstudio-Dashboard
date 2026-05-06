@@ -2,8 +2,15 @@ import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
 import { requireAgent, isAgentResponse } from "@/lib/agent-auth"
 import { stateToPrisma, stateFromPrisma } from "@/lib/enum-map"
+import {
+  detectUnknownFields,
+  unknownFieldWarnings,
+  fieldError,
+} from "@/lib/agent-fields"
 
 const USER_SELECT = { id: true, name: true, email: true, image: true, isAgent: true } as const
+
+const PROJECT_CREATE_FIELDS = ["title", "brainDump", "artifactLinks", "state"] as const
 
 export async function GET(req: NextRequest) {
   const ctx = await requireAgent(req, "projects:read")
@@ -17,6 +24,11 @@ export async function GET(req: NextRequest) {
     include: {
       user: { select: USER_SELECT },
       _count: { select: { tasks: true } },
+      // The full favoritedBy roster lets agents see who else has starred a
+      // project, so they can answer "what is Vlad working on right now?"
+      // without scraping. `isFavorite` is derived from this set against the
+      // agent's own user ID.
+      favoritedBy: { select: USER_SELECT },
     },
     orderBy: { createdAt: "desc" },
   })
@@ -32,6 +44,8 @@ export async function GET(req: NextRequest) {
       updatedAt: p.updatedAt,
       owner: p.user,
       taskCount: p._count.tasks,
+      favoritedBy: p.favoritedBy,
+      isFavorite: p.favoritedBy.some((u) => u.id === ctx.agentUserId),
     })),
   )
 }
@@ -41,13 +55,14 @@ export async function POST(req: NextRequest) {
   if (isAgentResponse(ctx)) return ctx
 
   const body = await req.json().catch(() => ({}))
+  const unknownFields = detectUnknownFields(body, PROJECT_CREATE_FIELDS)
   const title: string = (body.title ?? "").trim()
   const brainDump: string = body.brainDump ?? ""
   const artifactLinks: string = body.artifactLinks ?? ""
   const state: string = body.state ?? "Backlog"
 
   if (!title) {
-    return Response.json({ error: "Title is required" }, { status: 400 })
+    return fieldError("title", "title is required")
   }
 
   // Token-scoped agents can only create projects if they have access to all
@@ -84,12 +99,15 @@ export async function POST(req: NextRequest) {
     return created
   })
 
+  const warnings = unknownFieldWarnings(unknownFields)
+
   return Response.json(
     {
       id: project.id,
       title: project.title,
       state: stateFromPrisma(project.state),
       createdAt: project.createdAt,
+      ...(warnings.length > 0 && { warnings }),
     },
     { status: 201 },
   )

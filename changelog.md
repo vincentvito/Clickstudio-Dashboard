@@ -2,6 +2,14 @@
 
 ## 2026-05-06
 
+### Agent project favorites
+- `GET /api/agent/projects` and `GET /api/agent/projects/[projectId]` now include `favoritedBy: User[]` (the full starring roster) and `isFavorite: boolean` (the calling agent's own perspective). Lets agents both see what humans are focused on and surface their own work via the `★` in the dashboard sidebar.
+- New `POST /api/agent/projects/[projectId]/favorite` (scope: `projects:read`). Toggles by default; pass `{ favorite: boolean }` to set explicitly. Mirrors the session-auth route but uses `ctx.agentUserId` so each token's synthetic user has its own list.
+
+### Agent route hardening (silently dropped fields + field-named errors)
+- New `lib/agent-fields.ts` with `detectUnknownFields` / `unknownFieldWarnings` / `fieldError` helpers. Wired into all agent write routes: tasks (POST/PATCH), projects (POST/PATCH), logs (POST), ideas (POST), favorite (POST). Bodies with keys outside the allow-list now come back with `warnings: string[]` on the response object instead of being silently ignored — so `assigneId` (typo) is no longer the same as a clean POST.
+- Validation 400 errors now include a `field` key alongside `error` and `hint`. Existing parsers that only read `error` keep working; programmatic clients can now map the failure to a specific input. The CLI prepends `field: <name>` to the rendered hint.
+
 ### Agent task DELETE
 - `DELETE /api/agent/tasks/[taskId]` (scope `tasks:write`) so agents can clean up their own probe/test tasks without a human round-trip. Same project/org guard as PATCH; returns `{ ok, id, title }` on success.
 

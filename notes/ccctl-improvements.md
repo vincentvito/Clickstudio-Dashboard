@@ -63,7 +63,7 @@ Items grouped by area, with rough effort tags: `S` ≤ ½ day, `M` ½–1 day,
 
 ### B. Discovery without memorised IDs
 
-- [ ] **B1 [M] — `projects get <title-or-id>` and similar.** Resolution order:
+- [x] **B1 [M] — `projects get <title-or-id>` and similar.** Resolution order:
   1. Exact `id` (cuid format detected).
   2. Case-insensitive exact `title`.
   3. Case-insensitive contains-match if unambiguous.
@@ -72,51 +72,53 @@ Items grouped by area, with rough effort tags: `S` ≤ ½ day, `M` ½–1 day,
   `tasks list --project`, `tasks create --project`,
   `logs create --project`. The `--project` flag should accept either ID
   or title.
-- [ ] **B2 [S] — `tasks get <title-or-id> [--project <p>]`.** Same idea, but
+- [x] **B2 [S] — `tasks get <title-or-id> [--project <p>]`.** Same idea, but
   scoped by project to avoid global title collisions.
 
 ### C. Filtering
 
-- [ ] **C1 [S] — `tasks list --status <todo|doing|done|...>`.** Column ID match.
+- [x] **C1 [S] — `tasks list --status <todo|doing|done|...>`.** Column ID match.
   Document the canonical column IDs.
-- [ ] **C2 [S] — `tasks list --assignee @handle`.** Reuses A5 resolver.
-- [ ] **C3 [S] — `tasks list --section <name>`.** Case-insensitive exact.
+- [x] **C2 [S] — `tasks list --assignee @handle`.** Reuses A5 resolver.
+- [x] **C3 [S] — `tasks list --section <name>`.** Case-insensitive exact.
 - All three should be combinable. Server-side filtering preferred; if not
   available, document the fallback as client-side.
 
 ### D. Output schema stability
 
-- [ ] **D1 [S] — Document the JSON envelope.** Add a section to the README
+- [x] **D1 [S] — Document the JSON envelope.** Add a section to the README
   stating: `{ ok: bool, data: T, summary?: string, breadcrumbs?: [], notice?: string }`.
   Pin the shape of `data` per command in a generated reference.
-- [ ] **D2 [S] — Add `schemaVersion: "1"` to the envelope.** Cheap insurance
+- [x] **D2 [S] — Add `schemaVersion: "1"` to the envelope.** Cheap insurance
   for future breaking changes — agents can branch on it. Do this before
   the CLI is widely deployed.
 
 ### E. Safer writes
 
-- [ ] **E1 [S] — Global `--dry-run`.** When set, the CLI prints the resolved
+- [x] **E1 [S] — Global `--dry-run`.** When set, the CLI prints the resolved
   HTTP method + URL + JSON body it *would* send and exits 0 without
   contacting the API. Implement at the client layer so every write
   command gets it for free.
-- [ ] **E2 [S] — `tasks update --append-description "..."`,
+- [x] **E2 [S] — `tasks update --append-description "..."`,
   `--prepend-description "..."`.** Fetch current description, concatenate
   with a separator (`\n\n`), PATCH. Document the fetch-then-write nature
   (race window is small but real).
-- [ ] **E3 [S] — Strict mode for unknown flags.** Commander's default is
-  already strict — but verify: the CLI should reject e.g.
-  `--asignee` (typo) instead of silently dropping it.
+- [x] **E3 [S] — Strict mode for unknown flags.** Verified: commander
+  rejects unknown options out of the box, prints "Did you mean …?", and
+  exits non-zero. Tested `--asignee` and root-level `--bogus` — both
+  exit 1 with a helpful message. No code change required.
 
 ### F. Better error reporting
 
-- [ ] **F1 [S] — Surface dropped fields.** When the agent API receives a
-  field it does not understand, return it in `data.warnings` (or similar)
-  rather than silently ignoring. The CLI surfaces these as a yellow
-  notice in TTY mode and in the JSON envelope's `notice` field.
-  Affects: backend agent routes (small, defensive change).
-- [ ] **F2 [S] — Validation errors should name the field.** Today we get
-  `400 Bad Request` with a generic message; agents need
-  `{ field, code, message, hint }` shaped errors.
+- [x] **F1 [S] — Surface dropped fields.** Implemented via shared
+  `lib/agent-fields.ts` helper applied to every agent write route (tasks,
+  projects, logs, ideas, favorite). Unknown body keys come back as
+  `warnings: string[]` on the response. CLI's `client.request()` strips
+  them off the typed object and pushes into a per-invocation notice queue
+  drained by the writer.
+- [x] **F2 [S] — Validation errors should name the field.** All agent
+  write routes now use `fieldError(field, message, hint?)`. CLI surfaces
+  the field name in the rendered hint (`field: title — title is required`).
 
 ## Suggested order
 
@@ -137,15 +139,17 @@ warning route, keep the explicit `--assignee` flag canonical.
 
 After all three batches:
 
-- [ ] `ccctl projects get "Clickstudio dashboard"` returns the project without
+- [x] `ccctl projects get "Clickstudio dashboard"` returns the project without
   needing the CUID.
-- [ ] `ccctl tasks create --project "Family Photoshoot AI" --title "Smoke test" --assignee @vlad --dry-run`
+- [x] `ccctl tasks create --project "Family Photoshoot AI" --title "Smoke test" --assignee @vlad --dry-run`
   prints the payload, exits 0, mutates nothing.
-- [ ] Same command without `--dry-run` creates the task and `ccctl tasks get
+- [x] Same command without `--dry-run` creates the task and `ccctl tasks get
   <id>` shows Vlad in `assignees`.
-- [ ] `ccctl tasks list --project "Family Photoshoot AI" --status todo --assignee @vlad`
+- [x] `ccctl tasks list --project "Family Photoshoot AI" --status todo --assignee @vlad`
   filters correctly.
-- [ ] `ccctl tasks update <id> --append-description "Update: deployed."` does
+- [x] `ccctl tasks update <id> --append-description "Update: deployed."` does
   not clobber the existing description.
-- [ ] A bad alias (`--assignee @nope`) prints a candidate list and exits with
-  exit code 4 (forbidden/scope) or 1 (usage) — pick one and document.
+- [x] A bad alias (`--assignee @nope`) prints a candidate list and exits with
+  exit code **1** (`usage_error`) — chosen over 4 (forbidden/scope) because
+  the alias never reached the API; it's a user-input problem, not a
+  permission problem. Same code as commander's "unknown option" errors.

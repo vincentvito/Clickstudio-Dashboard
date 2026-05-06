@@ -8,23 +8,34 @@ import {
 import { extractMentionedUserIds } from "@/lib/mentions"
 import { createNotifications } from "@/lib/notifications"
 import { resolveMentionRecipients } from "@/lib/mention-recipients"
+import {
+  detectUnknownFields,
+  unknownFieldWarnings,
+  fieldError,
+} from "@/lib/agent-fields"
+
+const LOG_CREATE_FIELDS = ["projectId", "project", "text", "message"] as const
 
 export async function POST(req: NextRequest) {
   const ctx = await requireAgent(req, "logs:write")
   if (isAgentResponse(ctx)) return ctx
 
   const body = await req.json().catch(() => ({}))
+  const unknownFields = detectUnknownFields(body, LOG_CREATE_FIELDS)
   const projectId: string | undefined = body.projectId ?? body.project
   const text: string = (body.text ?? body.message ?? "").trim()
 
   if (!projectId) {
-    return Response.json({ error: "projectId is required" }, { status: 400 })
+    return fieldError("projectId", "projectId is required", "Pass --project <ref> on the CLI")
   }
   if (!text) {
-    return Response.json({ error: "text is required" }, { status: 400 })
+    return fieldError("text", "text is required", "Pass --message <text> on the CLI")
   }
   if (!canAccessProject(ctx, projectId)) {
-    return Response.json({ error: "Forbidden", hint: "Project not in token scope" }, { status: 403 })
+    return Response.json(
+      { error: "Forbidden", hint: "Project not in token scope" },
+      { status: 403 },
+    )
   }
 
   const project = await prisma.project.findFirst({
@@ -32,7 +43,7 @@ export async function POST(req: NextRequest) {
     select: { id: true, title: true },
   })
   if (!project) {
-    return Response.json({ error: "Project not found" }, { status: 404 })
+    return fieldError("projectId", "Project not found", undefined, 404)
   }
 
   const log = await prisma.logEntry.create({
@@ -58,8 +69,16 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const warnings = unknownFieldWarnings(unknownFields)
+
   return Response.json(
-    { id: log.id, text: log.text, projectId: log.projectId, createdAt: log.createdAt },
+    {
+      id: log.id,
+      text: log.text,
+      projectId: log.projectId,
+      createdAt: log.createdAt,
+      ...(warnings.length > 0 && { warnings }),
+    },
     { status: 201 },
   )
 }

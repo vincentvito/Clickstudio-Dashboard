@@ -8,6 +8,11 @@ import {
 import { extractMentionedUserIds } from "@/lib/mentions"
 import { createNotifications } from "@/lib/notifications"
 import { resolveMentionRecipients } from "@/lib/mention-recipients"
+import {
+  detectUnknownFields,
+  unknownFieldWarnings,
+  fieldError,
+} from "@/lib/agent-fields"
 
 const ASSIGNEE_SELECT = {
   id: true,
@@ -16,6 +21,21 @@ const ASSIGNEE_SELECT = {
   image: true,
   isAgent: true,
 } as const
+
+// Keep in sync with the body parsing below. Aliases (status→columnId,
+// project→projectId) are listed as their incoming names.
+const TASK_CREATE_FIELDS = [
+  "projectId",
+  "project",
+  "title",
+  "description",
+  "columnId",
+  "status",
+  "section",
+  "assignToSelf",
+  "assigneeIds",
+] as const
+
 
 export async function GET(req: NextRequest) {
   const ctx = await requireAgent(req, "tasks:read")
@@ -66,17 +86,21 @@ export async function POST(req: NextRequest) {
   if (isAgentResponse(ctx)) return ctx
 
   const body = await req.json().catch(() => ({}))
+  const unknownFields = detectUnknownFields(body, TASK_CREATE_FIELDS)
   const projectId: string | undefined = body.projectId ?? body.project
   const title: string = (body.title ?? "").trim()
 
   if (!projectId) {
-    return Response.json({ error: "projectId is required" }, { status: 400 })
+    return fieldError("projectId", "projectId is required", "Pass --project <ref> on the CLI")
   }
   if (!title) {
-    return Response.json({ error: "title is required" }, { status: 400 })
+    return fieldError("title", "title is required")
   }
   if (!canAccessProject(ctx, projectId)) {
-    return Response.json({ error: "Forbidden", hint: "Project not in token scope" }, { status: 403 })
+    return Response.json(
+      { error: "Forbidden", hint: "Project not in token scope" },
+      { status: 403 },
+    )
   }
 
   const project = await prisma.project.findFirst({
@@ -84,7 +108,7 @@ export async function POST(req: NextRequest) {
     select: { id: true },
   })
   if (!project) {
-    return Response.json({ error: "Project not found" }, { status: 404 })
+    return fieldError("projectId", "Project not found", undefined, 404)
   }
 
   const description: string = typeof body.description === "string" ? body.description : ""
@@ -181,6 +205,8 @@ export async function POST(req: NextRequest) {
     ])
   }
 
+  const warnings = unknownFieldWarnings(unknownFields)
+
   return Response.json(
     {
       id: task.id,
@@ -191,6 +217,7 @@ export async function POST(req: NextRequest) {
       position: task.position,
       assignees: task.assignees,
       createdAt: task.createdAt,
+      ...(warnings.length > 0 && { warnings }),
     },
     { status: 201 },
   )
