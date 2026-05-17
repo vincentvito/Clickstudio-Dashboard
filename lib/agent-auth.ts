@@ -13,6 +13,8 @@ export type AgentScope =
   | "ideas:write"
   | "notes:read"
   | "notes:write"
+  | "wiki:read"
+  | "wiki:write"
 
 export const ALL_SCOPES: AgentScope[] = [
   "org:read",
@@ -25,13 +27,21 @@ export const ALL_SCOPES: AgentScope[] = [
   "ideas:write",
   "notes:read",
   "notes:write",
+  "wiki:read",
+  "wiki:write",
 ]
 
 // Scopes that operate on org-level resources and ignore the per-token
 // `projectIds` allow-list. Combining these with a non-empty `projectIds` is
 // rejected at mint time so the UI's "scoped to specific projects" promise
 // holds end-to-end.
-export const ORG_WIDE_SCOPES: AgentScope[] = ["org:read", "ideas:read", "ideas:write"]
+export const ORG_WIDE_SCOPES: AgentScope[] = [
+  "org:read",
+  "ideas:read",
+  "ideas:write",
+  "wiki:read",
+  "wiki:write",
+]
 
 export function isOrgWideScope(scope: string): boolean {
   return (ORG_WIDE_SCOPES as string[]).includes(scope)

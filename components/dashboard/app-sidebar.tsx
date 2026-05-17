@@ -41,6 +41,7 @@ import {
   Sparkles,
   Lightbulb,
   Star,
+  BookOpenText,
 } from "lucide-react"
 import { BrandMark } from "@/components/brand-mark"
 import { APP_VERSION } from "@/lib/changelog"
@@ -163,6 +164,18 @@ export function AppSidebar({ onNewProject, ...props }: AppSidebarProps) {
                   <Link href="/dashboard/agents">
                     <Sparkles />
                     <span>Agents</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith("/dashboard/wiki")}
+                  tooltip="Wiki"
+                >
+                  <Link href="/dashboard/wiki">
+                    <BookOpenText />
+                    <span>Wiki</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

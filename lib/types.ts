@@ -49,6 +49,25 @@ export interface Note {
   author?: UserSummary
 }
 
+export interface WikiAuthor {
+  id: string
+  name: string | null
+  image: string | null
+  isAgent?: boolean
+}
+
+export interface WikiEntry {
+  id: string
+  title: string
+  links: string
+  content: string
+  tags: string
+  createdAt: string
+  updatedAt: string
+  userId: string
+  user?: WikiAuthor
+}
+
 export interface AppData {
   projects: Project[]
   tasks: Task[]

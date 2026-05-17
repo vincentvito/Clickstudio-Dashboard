@@ -39,6 +39,8 @@ const ALL_SCOPES = [
   { id: "logs:write", label: "Write logs", orgWide: false },
   { id: "ideas:read", label: "Read ideas", orgWide: true },
   { id: "ideas:write", label: "Write ideas", orgWide: true },
+  { id: "wiki:read", label: "Read wiki", orgWide: true },
+  { id: "wiki:write", label: "Write wiki", orgWide: true },
 ] as const
 
 type AgentTokenRow = {
@@ -84,6 +86,8 @@ export default function AgentTokensPage() {
     "logs:write",
     "ideas:read",
     "ideas:write",
+    "wiki:read",
+    "wiki:write",
   ])
   const [creating, setCreating] = useState(false)
 

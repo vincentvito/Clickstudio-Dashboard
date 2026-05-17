@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-05-16
+
+### Wiki — agent CLI surface
+- New routes: `GET /api/agent/wiki` (list, with `?search=&limit=`), `POST /api/agent/wiki` (create), `GET /api/agent/wiki/[entryId]`, `PATCH /api/agent/wiki/[entryId]`, `DELETE /api/agent/wiki/[entryId]`. Mirrors the session-auth wiki CRUD and reuses the same `WIKI_LIMITS` + field normalization from `lib/wiki-validation.ts`.
+- New scopes: `wiki:read`, `wiki:write` added to `AgentScope`, `ALL_SCOPES`, and `ORG_WIDE_SCOPES`. Wiki is org-wide (like ideas), so combining either scope with a per-token `projectIds` allow-list is rejected at mint. Token mint UI gained both checkboxes and they're in the default-selected set. **Existing tokens do not auto-gain these scopes** — re-mint to use the new wiki commands.
+- Agent-created entries are owned by the token's synthetic user, so the wiki UI shows the 🤖 badge in the author column for entries captured via `ccctl`.
+- Routes apply F1+F2 hardening: unknown body fields surface as `warnings: string[]` on the response, and validation errors return `{ error, field, hint }`.
+
+### Wiki section
+- Added a new org-wide `/dashboard/wiki` section linked directly below Agents in the sidebar. It stores searchable Click Studio reference entries with titles, freeform links/paths, notes, and comma-separated tags.
+- New `WikiEntry` Prisma model and migration `20260516120000_add_wiki_entries`, plus session-auth routes for listing, creating, editing, and deleting entries under `/api/wiki`.
+- Wiki UI supports quick paste capture, local search across title/links/notes/tags, copy buttons for saved links and paths, and open buttons for URL-style links.
+- Hardened wiki routes for production: malformed JSON now returns 400, oversized requests return 413, field caps are enforced (`title` 300 chars, `tags` 500 chars, `links`/`content` 50 KB each), author emails are omitted from wiki responses, and scoped PATCH/DELETE mutations avoid a pre-read.
+
 ## 2026-05-06
 
 ### Agent notes — full CRUD over the bearer-authed surface

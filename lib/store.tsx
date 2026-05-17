@@ -3,7 +3,7 @@
 import { useMemo } from "react"
 import useSWR, { mutate } from "swr"
 import { toast } from "sonner"
-import type { Project, Task, LogEntry, Note, UserSummary, Notification, Idea } from "./types"
+import type { Project, Task, LogEntry, Note, WikiEntry, UserSummary, Notification, Idea } from "./types"
 import { isIdeaNameSearchStuck } from "@/lib/ideas/name-search-status"
 
 const fetcher = (url: string) =>
@@ -308,6 +308,55 @@ export async function deleteNote(id: string) {
     toast.success("Note deleted")
   } catch (e: any) {
     toast.error(e.message ?? "Failed to delete note")
+    throw e
+  }
+}
+
+// ─── Wiki ────────────────────────────────────────────────
+
+export function useWikiEntries() {
+  const { data, isLoading, error } = useSWR<WikiEntry[]>("/api/wiki", fetcher)
+  return { entries: data ?? [], isLoading, error }
+}
+
+export async function createWikiEntry(input: {
+  title?: string
+  links?: string
+  content?: string
+  tags?: string
+}): Promise<WikiEntry> {
+  try {
+    const entry = await api("/api/wiki", "POST", input)
+    mutate("/api/wiki")
+    toast.success("Wiki entry saved")
+    return entry
+  } catch (e: any) {
+    toast.error(e.message ?? "Failed to save wiki entry")
+    throw e
+  }
+}
+
+export async function updateWikiEntry(
+  id: string,
+  updates: Partial<Pick<WikiEntry, "title" | "links" | "content" | "tags">>,
+) {
+  try {
+    await api(`/api/wiki/${id}`, "PATCH", updates)
+    mutate("/api/wiki")
+    toast.success("Wiki entry updated")
+  } catch (e: any) {
+    toast.error(e.message ?? "Failed to update wiki entry")
+    throw e
+  }
+}
+
+export async function deleteWikiEntry(id: string) {
+  try {
+    await api(`/api/wiki/${id}`, "DELETE")
+    mutate("/api/wiki")
+    toast.success("Wiki entry deleted")
+  } catch (e: any) {
+    toast.error(e.message ?? "Failed to delete wiki entry")
     throw e
   }
 }

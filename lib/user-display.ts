@@ -1,12 +1,18 @@
 import type { UserSummary } from "@/lib/types"
 
+type DisplayUser = {
+  name?: string | null
+  email?: string | null
+  isAgent?: boolean
+}
+
 // Use the explicit codepoint escape rather than a literal emoji so any
 // toolchain step that mishandles UTF-8 (editor, bundler, terminal) can't
 // turn the prefix into mojibake.
 const AGENT_PREFIX = "\u{1F916} "
 
 export function displayName(
-  user: Pick<UserSummary, "name" | "email" | "isAgent"> | null | undefined,
+  user: DisplayUser | null | undefined,
   fallback = "Unknown",
 ): string {
   if (!user) return fallback
