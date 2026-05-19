@@ -41,6 +41,16 @@ export const TASK_COLUMN_LABELS: Record<string, string> = {
   done: "Done",
 }
 
+// Source of truth for valid column ids. The board, the agent API, and the
+// CLI all key off this list — drift between them was the cause of "I moved
+// the task to `doing` but it never showed up" bugs, since `doing` is not a
+// real column.
+export const TASK_COLUMN_IDS = Object.keys(TASK_COLUMN_LABELS)
+
+export function isValidTaskColumnId(id: string): boolean {
+  return Object.prototype.hasOwnProperty.call(TASK_COLUMN_LABELS, id)
+}
+
 export function taskColumnLabel(id: string | null | undefined): string {
   if (!id) return ""
   return TASK_COLUMN_LABELS[id] ?? id

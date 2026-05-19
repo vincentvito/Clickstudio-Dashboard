@@ -4,6 +4,7 @@ import { requireOrg, unauthorized } from "@/lib/api-auth"
 import { createNotifications } from "@/lib/notifications"
 import { diffMentions } from "@/lib/mentions"
 import { resolveMentionRecipients } from "@/lib/mention-recipients"
+import { TASK_COLUMN_IDS, isValidTaskColumnId } from "@/lib/constants"
 
 const ASSIGNEE_SELECT = { id: true, name: true, email: true, image: true, isAgent: true }
 
@@ -24,6 +25,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ta
   }
 
   const body = await req.json()
+
+  if (body.columnId !== undefined && !isValidTaskColumnId(body.columnId)) {
+    return Response.json(
+      { error: `Unknown columnId "${body.columnId}"`, field: "columnId", hint: `Valid ids: ${TASK_COLUMN_IDS.join(", ")}` },
+      { status: 400 },
+    )
+  }
 
   let assigneesUpdate: Record<string, unknown> | undefined
   let newAssigneeIds: string[] = []

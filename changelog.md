@@ -2,6 +2,11 @@
 
 ## 2026-05-19
 
+### Task columns — server-side validation + discovery endpoint
+- `POST /api/agent/tasks` and `PATCH /api/agent/tasks/[taskId]` now reject unknown `columnId` / `status` values with a 400 `{ error, field: "columnId", hint }` instead of silently writing them. This closes the bug where `--status doing` was accepted by the CLI, persisted to the DB, and then never rendered because the board only knows `todo | in-progress | done`. The session-auth routes (`POST /api/projects/[projectId]/tasks`, `PATCH /api/tasks/[taskId]`) apply the same validation for consistency.
+- New `GET /api/agent/tasks/columns` returns `[{ id, label }]` for the valid column set — requires `tasks:read`. Single source of truth lives in `lib/constants.ts` (`TASK_COLUMN_IDS`, `isValidTaskColumnId`).
+- CLI: new `ccctl tasks columns` subcommand prints valid ids; `--status` help text on `list`, `create`, and `update` now points at it instead of listing examples (which previously included the wrong `doing`). Breadcrumbs that suggested `--status doing` updated to `--status in-progress`.
+
 ### Agent tokens — active/all filter
 - The `/dashboard/admin/agent-tokens` page now shows an Active/All tabs filter above the token list, defaulting to Active. Revoked and expired tokens are hidden by default and surface under the “All” tab with counts on each tab.
 

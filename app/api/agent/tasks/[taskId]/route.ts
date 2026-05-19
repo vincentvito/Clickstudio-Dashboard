@@ -8,7 +8,8 @@ import {
 import { diffMentions } from "@/lib/mentions"
 import { createNotifications } from "@/lib/notifications"
 import { resolveMentionRecipients } from "@/lib/mention-recipients"
-import { detectUnknownFields, unknownFieldWarnings } from "@/lib/agent-fields"
+import { detectUnknownFields, unknownFieldWarnings, fieldError } from "@/lib/agent-fields"
+import { TASK_COLUMN_IDS, isValidTaskColumnId } from "@/lib/constants"
 
 const TASK_UPDATE_FIELDS = [
   "title",
@@ -83,6 +84,13 @@ export async function PATCH(
   // Accept "status" as a friendly alias for columnId so CLI users can
   // write `tasks update <id> --status doing` without knowing the schema.
   const nextColumnId: string | undefined = body.columnId ?? body.status
+  if (nextColumnId !== undefined && !isValidTaskColumnId(nextColumnId)) {
+    return fieldError(
+      "columnId",
+      `Unknown columnId "${nextColumnId}"`,
+      `Valid ids: ${TASK_COLUMN_IDS.join(", ")}. Use \`ccctl tasks columns\` to discover them.`,
+    )
+  }
   const columnChanged = nextColumnId !== undefined && nextColumnId !== task.columnId
 
   // Assignee replacement: full-set replace via `assigneeIds`, mirroring the

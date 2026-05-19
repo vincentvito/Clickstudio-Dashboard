@@ -13,6 +13,7 @@ import {
   unknownFieldWarnings,
   fieldError,
 } from "@/lib/agent-fields"
+import { TASK_COLUMN_IDS, isValidTaskColumnId } from "@/lib/constants"
 
 const ASSIGNEE_SELECT = {
   id: true,
@@ -114,6 +115,14 @@ export async function POST(req: NextRequest) {
   const description: string = typeof body.description === "string" ? body.description : ""
   const columnId: string = body.columnId ?? body.status ?? "todo"
   const section: string = body.section ?? "Product"
+
+  if (!isValidTaskColumnId(columnId)) {
+    return fieldError(
+      "columnId",
+      `Unknown columnId "${columnId}"`,
+      `Valid ids: ${TASK_COLUMN_IDS.join(", ")}. Use \`ccctl tasks columns\` to discover them.`,
+    )
+  }
 
   // Assignee resolution rules:
   //   - If `assigneeIds` is provided, validate it via resolveMentionRecipients

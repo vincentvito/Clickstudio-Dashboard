@@ -4,6 +4,7 @@ import { requireOrg, unauthorized } from "@/lib/api-auth"
 import { createNotifications } from "@/lib/notifications"
 import { extractMentionedUserIds } from "@/lib/mentions"
 import { resolveMentionRecipients } from "@/lib/mention-recipients"
+import { TASK_COLUMN_IDS, isValidTaskColumnId } from "@/lib/constants"
 
 const ASSIGNEE_SELECT = { id: true, name: true, email: true, image: true, isAgent: true }
 
@@ -29,6 +30,13 @@ export async function POST(
 
   if (!title?.trim()) {
     return Response.json({ error: "Title is required" }, { status: 400 })
+  }
+
+  if (columnId !== undefined && !isValidTaskColumnId(columnId)) {
+    return Response.json(
+      { error: `Unknown columnId "${columnId}"`, field: "columnId", hint: `Valid ids: ${TASK_COLUMN_IDS.join(", ")}` },
+      { status: 400 },
+    )
   }
 
   const descriptionValue = typeof description === "string" ? description : ""
