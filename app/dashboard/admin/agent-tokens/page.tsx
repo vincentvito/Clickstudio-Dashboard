@@ -1,12 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog"
 import {
   Dialog,
@@ -72,6 +73,19 @@ function relativeTime(iso: string | null) {
 export default function AgentTokensPage() {
   const [tokens, setTokens] = useState<AgentTokenRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<"active" | "all">("active")
+
+  function isTokenActive(t: AgentTokenRow) {
+    if (t.revokedAt) return false
+    if (t.expiresAt && new Date(t.expiresAt).getTime() < Date.now()) return false
+    return true
+  }
+
+  const activeCount = useMemo(() => tokens.filter(isTokenActive).length, [tokens])
+  const visibleTokens = useMemo(
+    () => (filter === "active" ? tokens.filter(isTokenActive) : tokens),
+    [tokens, filter],
+  )
 
   // Create dialog state
   const [createOpen, setCreateOpen] = useState(false)
@@ -220,8 +234,22 @@ export default function AgentTokensPage() {
           </Button>
         </div>
       ) : (
+        <>
+          <div className="mb-4">
+            <Tabs value={filter} onValueChange={(v) => setFilter(v as "active" | "all")}>
+              <TabsList>
+                <TabsTrigger value="active">Active ({activeCount})</TabsTrigger>
+                <TabsTrigger value="all">All ({tokens.length})</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+          {visibleTokens.length === 0 ? (
+            <div className="border-border/60 bg-muted/30 text-muted-foreground rounded-xl border border-dashed px-8 py-12 text-center text-sm">
+              No active tokens. Switch to “All” to see revoked or expired tokens.
+            </div>
+          ) : (
         <ul className="space-y-2.5">
-          {tokens.map((t) => {
+          {visibleTokens.map((t) => {
             const isRevoked = !!t.revokedAt
             const isExpired = t.expiresAt && new Date(t.expiresAt).getTime() < Date.now()
             const isInactive = isRevoked || isExpired
@@ -281,6 +309,8 @@ export default function AgentTokensPage() {
             )
           })}
         </ul>
+          )}
+        </>
       )}
 
       {/* Create dialog */}

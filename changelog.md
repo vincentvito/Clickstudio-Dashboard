@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-05-19
+
+### Agent tokens — active/all filter
+- The `/dashboard/admin/agent-tokens` page now shows an Active/All tabs filter above the token list, defaulting to Active. Revoked and expired tokens are hidden by default and surface under the “All” tab with counts on each tab.
+
 ## 2026-05-16
 
 ### Wiki — agent CLI surface
