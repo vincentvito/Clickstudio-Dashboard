@@ -11,6 +11,12 @@ interface PageProps {
   searchParams: Promise<{ event?: string }>
 }
 
+function getWebhookBaseUrl() {
+  const configured = process.env.NEXT_PUBLIC_WEBHOOK_BASE_URL ?? process.env.WEBHOOK_PUBLIC_BASE_URL
+
+  return (configured || "https://cc.clickstudio.ai").replace(/\/$/, "")
+}
+
 export default async function AdminWebhooksPage({ searchParams }: PageProps) {
   const org = await requireOrg()
   const params = await searchParams
@@ -102,6 +108,7 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
         })),
       }))}
       initialSelectedEventId={params.event}
+      webhookUrl={`${getWebhookBaseUrl()}/api/webhooks/postrider/message-received`}
       telegramRule={
         telegramRule
           ? {

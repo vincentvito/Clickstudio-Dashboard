@@ -74,6 +74,7 @@ interface WebhooksClientProps {
   telegramRule: RoutingRuleView | null
   events: EventView[]
   initialSelectedEventId?: string
+  webhookUrl: string
 }
 
 function formatTime(value: string | null) {
@@ -128,6 +129,7 @@ export function WebhooksClient({
   telegramRule: initialTelegramRule,
   events,
   initialSelectedEventId,
+  webhookUrl,
 }: WebhooksClientProps) {
   const router = useRouter()
   const [endpoint, setEndpoint] = useState(initialEndpoint)
@@ -141,7 +143,6 @@ export function WebhooksClient({
     events.find((event) => event.id === initialSelectedEventId) ?? null,
   )
 
-  const endpointUrl = "/api/webhooks/postrider/message-received"
   const selectedEventPayload = useMemo(
     () => JSON.stringify(selectedEvent?.payload ?? {}, null, 2),
     [selectedEvent?.payload],
@@ -314,9 +315,9 @@ export function WebhooksClient({
               <div className="grid gap-3 sm:grid-cols-[140px_1fr_auto] sm:items-center">
                 <span className="text-muted-foreground text-sm">URL</span>
                 <code className="bg-muted overflow-x-auto rounded-md px-3 py-2 text-sm">
-                  {endpointUrl}
+                  {webhookUrl}
                 </code>
-                <Button variant="outline" size="sm" onClick={() => copyValue(endpointUrl, "URL")}>
+                <Button variant="outline" size="sm" onClick={() => copyValue(webhookUrl, "URL")}>
                   <Copy data-icon="inline-start" />
                   Copy
                 </Button>

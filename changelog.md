@@ -11,6 +11,7 @@
 - Hardened webhook admin responses so encrypted secrets never return to the browser, require real key material for webhook secret encryption, gate webhook event visibility to owners/admins, and let admins save a Telegram chat target from the routing tab.
 - Aligned PostRiderAI webhook handling with the live contract: endpoint resolution now verifies against active endpoint secrets, `event_id` remains the idempotency key, duplicate deliveries refresh endpoint activity, admin notifications are limited to owners/admins, and Telegram labels use the routed target agent.
 - Hardened endpoint secret resolution so malformed signatures are rejected before secret work, undecryptable endpoint secrets are skipped during fallback scans, and `X-Webhook-Endpoint-Id` is documented as the preferred PostRiderAI fast path.
+- Fixed the Webhooks setup card to show and copy the absolute production ingress URL instead of a relative `/api/...` path.
 
 ## 2026-05-19
 
