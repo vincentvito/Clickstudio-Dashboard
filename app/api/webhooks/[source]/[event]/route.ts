@@ -8,10 +8,11 @@ import { findVerifiedWebhookEndpoint } from "@/lib/webhooks/endpoint-resolution"
 import { isWebhookSignatureFormatValid, isWebhookTimestampFresh } from "@/lib/webhooks/signature"
 import {
   getPostriderTargetAgent,
-  parsePostriderMessageReceived,
+  parsePostriderWebhookEvent,
   POSTRIDER_MESSAGE_RECEIVED_EVENT_SLUG,
   POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE,
   POSTRIDER_SOURCE,
+  POSTRIDER_WEBHOOK_TEST_EVENT_TYPE,
 } from "@/lib/webhooks/sources/postrider"
 
 export const runtime = "nodejs"
@@ -155,12 +156,25 @@ export async function POST(req: NextRequest, context: RouteContext) {
     return badRequest("Invalid JSON payload")
   }
 
-  const parsedPayload = parsePostriderMessageReceived(parsedJson)
+  const parsedPayload = parsePostriderWebhookEvent(parsedJson)
   if (!parsedPayload.success) {
-    return badRequest("Invalid PostRiderAI message.received payload")
+    return badRequest("Invalid PostRiderAI webhook payload")
   }
 
   const payload = parsedPayload.data
+  if (payload.event_type === POSTRIDER_WEBHOOK_TEST_EVENT_TYPE) {
+    await prisma.webhookEndpoint.update({
+      where: { id: endpoint.id },
+      data: { lastReceivedAt: new Date() },
+    })
+
+    return Response.json({
+      ok: true,
+      status: "test_received",
+      eventType: payload.event_type,
+      eventId: payload.event_id,
+    })
+  }
 
   try {
     const result = await prisma.$transaction(async (tx) => {

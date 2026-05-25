@@ -3,6 +3,13 @@ import { z } from "zod"
 export const POSTRIDER_SOURCE = "postrider"
 export const POSTRIDER_MESSAGE_RECEIVED_EVENT_SLUG = "message-received"
 export const POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE = "message.received"
+export const POSTRIDER_WEBHOOK_TEST_EVENT_TYPE = "webhook.test"
+
+const postriderInboxSchema = z.object({
+  id: z.string(),
+  address: z.string().email(),
+  name: z.string(),
+})
 
 export const postriderMessageReceivedSchema = z.object({
   type: z.literal("event"),
@@ -25,14 +32,24 @@ export const postriderMessageReceivedSchema = z.object({
       }),
     ),
   }),
-  inbox: z.object({
-    id: z.string(),
-    address: z.string().email(),
-    name: z.string(),
-  }),
+  inbox: postriderInboxSchema,
 })
 
+export const postriderWebhookTestSchema = z.object({
+  type: z.literal("event"),
+  event_type: z.literal(POSTRIDER_WEBHOOK_TEST_EVENT_TYPE),
+  event_id: z.string(),
+  inbox: postriderInboxSchema,
+  test: z.literal(true),
+})
+
+export const postriderWebhookEventSchema = z.discriminatedUnion("event_type", [
+  postriderMessageReceivedSchema,
+  postriderWebhookTestSchema,
+])
+
 export type PostriderMessageReceivedPayload = z.infer<typeof postriderMessageReceivedSchema>
+export type PostriderWebhookEventPayload = z.infer<typeof postriderWebhookEventSchema>
 
 export function getPostriderTargetAgent(payload: PostriderMessageReceivedPayload) {
   return payload.inbox.name || payload.inbox.address
@@ -40,4 +57,8 @@ export function getPostriderTargetAgent(payload: PostriderMessageReceivedPayload
 
 export function parsePostriderMessageReceived(payload: unknown) {
   return postriderMessageReceivedSchema.safeParse(payload)
+}
+
+export function parsePostriderWebhookEvent(payload: unknown) {
+  return postriderWebhookEventSchema.safeParse(payload)
 }
