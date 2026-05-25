@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-05-25
+
+### Control Center webhooks
+- Added a generic webhook ingress foundation with org-scoped `WebhookEndpoint`, `AgentEvent`, `AgentEventDelivery`, and `AgentRoutingRule` models plus dedupe constraints.
+- Added PostRiderAI `message.received` webhook support at `POST /api/webhooks/postrider/message-received`, including HMAC signature checks, timestamp freshness, signing-secret endpoint resolution, and duplicate `event_id` handling.
+- Added zod validation for incoming webhook payloads before storing or routing anything.
+- Added agent event delivery routing with Telegram as the first channel, including Telegram-safe message formatting that counts codes and links without exposing code values.
+- Added the admin Webhooks UI for endpoint setup, one-time signing secret reveal/regeneration, routing visibility, event inspection, delivery errors, and retrying failed deliveries.
+- Hardened webhook admin responses so encrypted secrets never return to the browser, require real key material for webhook secret encryption, gate webhook event visibility to owners/admins, and let admins save a Telegram chat target from the routing tab.
+- Aligned PostRiderAI webhook handling with the live contract: endpoint resolution now verifies against active endpoint secrets, `event_id` remains the idempotency key, duplicate deliveries refresh endpoint activity, admin notifications are limited to owners/admins, and Telegram labels use the routed target agent.
+- Hardened endpoint secret resolution so malformed signatures are rejected before secret work, undecryptable endpoint secrets are skipped during fallback scans, and `X-Webhook-Endpoint-Id` is documented as the preferred PostRiderAI fast path.
+
 ## 2026-05-19
 
 ### Task columns — server-side validation + discovery endpoint

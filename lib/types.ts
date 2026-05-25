@@ -109,7 +109,12 @@ export interface Idea {
   user?: UserSummary
 }
 
-export type NotificationType = "task_assigned" | "note_mention" | "task_mention" | "log_mention"
+export type NotificationType =
+  | "task_assigned"
+  | "note_mention"
+  | "task_mention"
+  | "log_mention"
+  | "postrider_message_received"
 
 export interface Notification {
   id: string

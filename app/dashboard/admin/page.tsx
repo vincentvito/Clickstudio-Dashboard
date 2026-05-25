@@ -27,6 +27,7 @@ import {
   X,
   Check,
   KeyRound,
+  Webhook,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -213,16 +214,22 @@ export default function SettingsPage() {
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="mb-1 text-lg font-bold tracking-tight">Admin</h1>
-          <p className="text-muted-foreground text-sm">
-            Manage members and roles for {org.name}
-          </p>
+          <p className="text-muted-foreground text-sm">Manage members and roles for {org.name}</p>
         </div>
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/dashboard/admin/agent-tokens">
-            <KeyRound className="size-3.5" />
-            Agent tokens
-          </Link>
-        </Button>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/dashboard/admin/agent-tokens">
+              <KeyRound className="size-3.5" />
+              Agent tokens
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/dashboard/admin/webhooks">
+              <Webhook className="size-3.5" />
+              Webhooks
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Profile */}

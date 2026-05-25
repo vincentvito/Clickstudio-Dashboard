@@ -98,12 +98,15 @@ model Organization {
   metadata  String?
   createdAt DateTime @default(now())
 
-  members     Member[]
-  invitations Invitation[]
-  projects    Project[]
-  ideas       Idea[]
-  agentTokens AgentToken[]
-  wikiEntries WikiEntry[]
+  members           Member[]
+  invitations       Invitation[]
+  projects          Project[]
+  ideas             Idea[]
+  agentTokens       AgentToken[]
+  wikiEntries       WikiEntry[]
+  webhookEndpoints  WebhookEndpoint[]
+  agentEvents       AgentEvent[]
+  agentRoutingRules AgentRoutingRule[]
 
   @@map("organization")
 }
@@ -242,7 +245,7 @@ model LogEntry {
 
 model Notification {
   id        String   @id @default(cuid())
-  type      String // "task_assigned" | "note_mention" | "task_mention" | "log_mention"
+  type      String // "task_assigned" | "note_mention" | "task_mention" | "log_mention" | "postrider_message_received"
   message   String
   link      String?
   isRead    Boolean  @default(false)
@@ -325,6 +328,88 @@ model AgentToken {
 }
 
 // ─── Push Notifications ─────────────────────────────────
+
+// Agent Events And Webhooks
+
+model WebhookEndpoint {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  source          String
+  eventSlug       String
+  eventType       String
+  encryptedSecret String
+  isActive        Boolean   @default(true)
+  lastReceivedAt  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([organizationId, source, eventSlug])
+  @@index([source, eventSlug])
+  @@map("webhook_endpoint")
+}
+
+model AgentEvent {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  source            String
+  eventType         String
+  targetAgent       String?
+  targetUserId      String?
+  externalId        String
+  providerMessageId String?
+  payload           Json
+  status            String    @default("pending")
+  error             String?
+  receivedAt        DateTime  @default(now())
+  handledAt         DateTime?
+
+  deliveries AgentEventDelivery[]
+
+  @@unique([organizationId, source, eventType, externalId])
+  @@index([organizationId, receivedAt])
+  @@index([status])
+  @@map("agent_event")
+}
+
+model AgentEventDelivery {
+  id      String     @id @default(cuid())
+  eventId String
+  event   AgentEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  channel     String
+  target      String?
+  status      String    @default("pending")
+  attempts    Int       @default(0)
+  lastError   String?
+  deliveredAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([eventId])
+  @@index([status])
+  @@map("agent_event_delivery")
+}
+
+model AgentRoutingRule {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  source      String
+  eventType   String
+  targetAgent String?
+  channel     String
+  target      String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([organizationId, source, eventType])
+  @@map("agent_routing_rule")
+}
 
 model PushSubscription {
   id        String   @id @default(cuid())

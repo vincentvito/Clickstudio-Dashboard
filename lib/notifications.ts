@@ -15,6 +15,7 @@ const PUSH_TITLE: Record<NotificationType, string> = {
   task_mention: "You were mentioned",
   note_mention: "You were mentioned",
   log_mention: "You were mentioned",
+  postrider_message_received: "PostRiderAI message received",
 }
 
 export async function createNotifications(inputs: CreateNotificationInput[]) {
