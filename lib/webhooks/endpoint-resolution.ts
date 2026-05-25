@@ -2,23 +2,23 @@ import { decryptWebhookSigningSecret } from "@/lib/webhooks/secrets"
 import { verifyWebhookSignature } from "@/lib/webhooks/signature"
 
 interface WebhookEndpointCandidate {
-  encryptedSecret: string
+  encryptedSecret: string | null
 }
 
 export function findVerifiedWebhookEndpoint<T extends WebhookEndpointCandidate>({
   endpoints,
   signature,
   timestamp,
-  endpointId,
   rawBody,
 }: {
   endpoints: T[]
   signature: string
   timestamp: string
-  endpointId: string | null
   rawBody: string
 }) {
   for (const endpoint of endpoints) {
+    if (!endpoint.encryptedSecret) continue
+
     let signingSecret: string
     try {
       signingSecret = decryptWebhookSigningSecret(endpoint.encryptedSecret)
@@ -32,17 +32,8 @@ export function findVerifiedWebhookEndpoint<T extends WebhookEndpointCandidate>(
       rawBody,
       secret: signingSecret,
     })
-    const matchesEndpointSignature =
-      endpointId &&
-      verifyWebhookSignature({
-        signature,
-        timestamp,
-        webhookId: endpointId,
-        rawBody,
-        secret: signingSecret,
-      })
 
-    if (matchesCanonicalSignature || matchesEndpointSignature) {
+    if (matchesCanonicalSignature) {
       return endpoint
     }
   }

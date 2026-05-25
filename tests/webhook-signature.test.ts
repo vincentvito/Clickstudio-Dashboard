@@ -7,7 +7,7 @@ import {
   verifyWebhookSignature,
 } from "@/lib/webhooks/signature"
 
-test("valid webhook signatures verify with timestamp, webhook id, and raw body", () => {
+test("legacy generic signatures can still include an endpoint id", () => {
   const timestamp = "1766664000"
   const webhookId = "wh_123"
   const rawBody = JSON.stringify({ event_id: "evt_abc123" })
@@ -17,7 +17,7 @@ test("valid webhook signatures verify with timestamp, webhook id, and raw body",
   assert.equal(verifyWebhookSignature({ signature, timestamp, webhookId, rawBody, secret }), true)
 })
 
-test("valid PostRiderAI signatures verify with timestamp and raw body", () => {
+test("canonical PostRider signatures verify with X-PostRider-Timestamp and raw body", () => {
   const timestamp = "1766664000"
   const rawBody = JSON.stringify({ event_id: "evt_abc123" })
   const secret = "whsec_test"

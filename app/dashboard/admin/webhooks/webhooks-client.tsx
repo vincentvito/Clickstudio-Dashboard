@@ -23,7 +23,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Check, Copy, RefreshCcw, RotateCcw } from "lucide-react"
+import { Check, Copy, KeyRound, RotateCcw, Save } from "lucide-react"
 import { toast } from "sonner"
 
 interface EndpointView {
@@ -32,6 +32,7 @@ interface EndpointView {
   eventSlug: string
   eventType: string
   isActive: boolean
+  hasVerificationSecret: boolean
   lastReceivedAt: string | null
   createdAt: string
 }
@@ -135,14 +136,17 @@ export function WebhooksClient({
   const [endpoint, setEndpoint] = useState(initialEndpoint)
   const [telegramRule, setTelegramRule] = useState(initialTelegramRule)
   const [telegramTarget, setTelegramTarget] = useState(initialTelegramRule?.target ?? "")
-  const [signingSecret, setSigningSecret] = useState<string | null>(null)
+  const [verificationSecret, setVerificationSecret] = useState("")
   const [creatingEndpoint, setCreatingEndpoint] = useState(false)
-  const [regeneratingSecret, setRegeneratingSecret] = useState(false)
+  const [savingVerificationSecret, setSavingVerificationSecret] = useState(false)
   const [routingSaving, setRoutingSaving] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<EventView | null>(
     events.find((event) => event.id === initialSelectedEventId) ?? null,
   )
 
+  const endpointUrl = endpoint
+    ? `${webhookUrl.split("?")[0]}?endpoint=${encodeURIComponent(endpoint.id)}`
+    : webhookUrl
   const selectedEventPayload = useMemo(
     () => JSON.stringify(selectedEvent?.payload ?? {}, null, 2),
     [selectedEvent?.payload],
@@ -165,6 +169,7 @@ export function WebhooksClient({
         eventSlug: data.endpoint.eventSlug,
         eventType: data.endpoint.eventType,
         isActive: data.endpoint.isActive,
+        hasVerificationSecret: data.endpoint.hasVerificationSecret,
         lastReceivedAt: data.endpoint.lastReceivedAt,
         createdAt: data.endpoint.createdAt,
       })
@@ -175,7 +180,6 @@ export function WebhooksClient({
         isActive: data.telegramRule.isActive,
       })
       setTelegramTarget(data.telegramRule.target ?? "")
-      setSigningSecret(data.signingSecret)
       router.refresh()
       toast.success("Webhook endpoint created")
     } catch {
@@ -185,29 +189,45 @@ export function WebhooksClient({
     }
   }
 
-  async function regenerateSecret() {
+  async function saveVerificationSecret() {
     if (!endpoint) return
+    if (!verificationSecret.trim()) {
+      toast.error("Paste the verification secret from PostRider")
+      return
+    }
 
-    setRegeneratingSecret(true)
+    setSavingVerificationSecret(true)
     try {
       const response = await fetch(
-        `/api/admin/webhooks/endpoints/${endpoint.id}/regenerate-secret`,
-        { method: "POST" },
+        `/api/admin/webhooks/endpoints/${endpoint.id}/verification-secret`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ secret: verificationSecret.trim() }),
+        },
       )
       const data = await response.json()
 
       if (!response.ok) {
-        toast.error(data.error ?? "Failed to regenerate secret")
+        toast.error(data.error ?? "Failed to save verification secret")
         return
       }
 
-      setSigningSecret(data.signingSecret)
+      setEndpoint((current) =>
+        current
+          ? {
+              ...current,
+              hasVerificationSecret: data.endpoint.hasVerificationSecret,
+            }
+          : current,
+      )
+      setVerificationSecret("")
       router.refresh()
-      toast.success("Signing secret regenerated")
+      toast.success("Verification secret saved")
     } catch {
-      toast.error("Failed to regenerate secret")
+      toast.error("Failed to save verification secret")
     } finally {
-      setRegeneratingSecret(false)
+      setSavingVerificationSecret(false)
     }
   }
 
@@ -306,18 +326,40 @@ export function WebhooksClient({
                 <CardDescription>message.received webhook endpoint</CardDescription>
               </div>
               <CardAction>
-                <Badge variant={endpoint?.isActive ? "default" : "destructive"}>
-                  {endpoint?.isActive ? "Active" : "Not configured"}
+                <Badge
+                  variant={
+                    endpoint?.isActive && endpoint.hasVerificationSecret
+                      ? "default"
+                      : endpoint
+                        ? "secondary"
+                        : "destructive"
+                  }
+                >
+                  {endpoint?.isActive && endpoint.hasVerificationSecret
+                    ? "Ready"
+                    : endpoint
+                      ? "Needs secret"
+                      : "Not configured"}
                 </Badge>
               </CardAction>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <div className="grid gap-3 sm:grid-cols-[140px_1fr_auto] sm:items-center">
                 <span className="text-muted-foreground text-sm">URL</span>
-                <code className="bg-muted overflow-x-auto rounded-md px-3 py-2 text-sm">
-                  {webhookUrl}
-                </code>
-                <Button variant="outline" size="sm" onClick={() => copyValue(webhookUrl, "URL")}>
+                <div className="flex flex-col gap-1">
+                  <code className="bg-muted overflow-x-auto rounded-md px-3 py-2 text-sm">
+                    {endpoint ? endpointUrl : "Create endpoint to generate URL"}
+                  </code>
+                  <span className="text-muted-foreground text-xs">
+                    Copy this URL into PostRider when creating the webhook.
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!endpoint}
+                  onClick={() => copyValue(endpointUrl, "URL")}
+                >
                   <Copy data-icon="inline-start" />
                   Copy
                 </Button>
@@ -330,7 +372,7 @@ export function WebhooksClient({
                     {endpoint?.id ?? "Create endpoint to generate ID"}
                   </code>
                   <span className="text-muted-foreground text-xs">
-                    Send as X-Webhook-Endpoint-Id for indexed endpoint resolution.
+                    Already included in the webhook URL as the endpoint query parameter.
                   </span>
                 </div>
                 <Button
@@ -353,43 +395,48 @@ export function WebhooksClient({
 
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1">
-                  <span className="text-sm font-medium">Signing secret</span>
+                  <span className="text-sm font-medium">Verification secret</span>
                   <span className="text-muted-foreground text-xs">
-                    Secrets are shown once after creation or regeneration.
+                    Paste the signing secret generated by PostRider. Control Center verifies
+                    X-PostRider-Signature with X-PostRider-Timestamp and the raw body.
                   </span>
                 </div>
 
-                {signingSecret ? (
-                  <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                    <Input value={signingSecret} readOnly />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => copyValue(signingSecret, "Signing secret")}
-                    >
-                      <Copy data-icon="inline-start" />
-                      Copy once
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="bg-muted rounded-md px-3 py-2 text-sm">Hidden</div>
-                )}
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                  <Input
+                    type="password"
+                    value={verificationSecret}
+                    placeholder={
+                      endpoint?.hasVerificationSecret
+                        ? "Secret saved - paste a new one to replace it"
+                        : "Paste PostRider signing secret"
+                    }
+                    disabled={!endpoint || savingVerificationSecret}
+                    onChange={(event) => setVerificationSecret(event.target.value)}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!endpoint || savingVerificationSecret}
+                    onClick={saveVerificationSecret}
+                  >
+                    <Save data-icon="inline-start" />
+                    {savingVerificationSecret ? "Saving" : "Save secret"}
+                  </Button>
+                </div>
+
+                <div className="text-muted-foreground flex items-center gap-2 text-xs">
+                  <KeyRound className="size-3.5" />
+                  {endpoint?.hasVerificationSecret
+                    ? "Verification secret is saved."
+                    : "Verification secret has not been saved yet."}
+                </div>
 
                 <div className="flex gap-2">
                   {!endpoint && (
                     <Button onClick={createEndpoint} disabled={creatingEndpoint}>
                       <Check data-icon="inline-start" />
                       {creatingEndpoint ? "Creating" : "Create endpoint"}
-                    </Button>
-                  )}
-                  {endpoint && (
-                    <Button
-                      variant="outline"
-                      onClick={regenerateSecret}
-                      disabled={regeneratingSecret}
-                    >
-                      <RefreshCcw data-icon="inline-start" />
-                      {regeneratingSecret ? "Regenerating" : "Regenerate"}
                     </Button>
                   )}
                 </div>

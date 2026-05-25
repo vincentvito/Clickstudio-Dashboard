@@ -1,7 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto"
 
-const SECRET_PREFIX = "whsec_"
-
 function getEncryptionKey() {
   const configuredKey = process.env.WEBHOOK_SECRET_ENCRYPTION_KEY
   const material = configuredKey || process.env.AUTH_SECRET || process.env.BETTER_AUTH_SECRET
@@ -9,10 +7,6 @@ function getEncryptionKey() {
   if (!material) return null
 
   return createHash("sha256").update(material).digest()
-}
-
-export function generateWebhookSigningSecret() {
-  return `${SECRET_PREFIX}${randomBytes(32).toString("base64url")}`
 }
 
 export function encryptWebhookSigningSecret(secret: string) {

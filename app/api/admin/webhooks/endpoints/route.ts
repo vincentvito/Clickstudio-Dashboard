@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma"
 import { forbidden, hasPermission, requireOrg, unauthorized } from "@/lib/api-auth"
-import { encryptWebhookSigningSecret, generateWebhookSigningSecret } from "@/lib/webhooks/secrets"
+import { serializeWebhookEndpoint } from "@/lib/webhooks/endpoint-response"
 import {
   POSTRIDER_MESSAGE_RECEIVED_EVENT_SLUG,
   POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE,
@@ -15,6 +15,7 @@ const endpointSelect = {
   isActive: true,
   lastReceivedAt: true,
   createdAt: true,
+  encryptedSecret: true,
 }
 
 const telegramRuleSelect = {
@@ -43,18 +44,6 @@ export async function POST() {
     return Response.json({ error: "Webhook endpoint already exists" }, { status: 409 })
   }
 
-  const signingSecret = generateWebhookSigningSecret()
-  let encryptedSecret: string
-
-  try {
-    encryptedSecret = encryptWebhookSigningSecret(signingSecret)
-  } catch {
-    return Response.json(
-      { error: "Webhook secret encryption key is not configured" },
-      { status: 500 },
-    )
-  }
-
   const { endpoint, telegramRule } = await prisma.$transaction(async (tx) => {
     const endpoint = await tx.webhookEndpoint.create({
       data: {
@@ -62,7 +51,6 @@ export async function POST() {
         source: POSTRIDER_SOURCE,
         eventSlug: POSTRIDER_MESSAGE_RECEIVED_EVENT_SLUG,
         eventType: POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE,
-        encryptedSecret,
         isActive: true,
       },
       select: endpointSelect,
@@ -99,5 +87,8 @@ export async function POST() {
     return { endpoint, telegramRule }
   })
 
-  return Response.json({ endpoint, signingSecret, telegramRule })
+  return Response.json({
+    endpoint: serializeWebhookEndpoint(endpoint),
+    telegramRule,
+  })
 }

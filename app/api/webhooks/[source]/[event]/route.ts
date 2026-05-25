@@ -68,6 +68,7 @@ async function resolveVerifiedEndpoint({
           source,
           eventSlug: event,
           isActive: true,
+          encryptedSecret: { not: null },
         },
       })
 
@@ -86,11 +87,20 @@ async function resolveVerifiedEndpoint({
     }
   }
 
+  if (endpointId && !endpoints[0]?.encryptedSecret) {
+    return {
+      endpoint: null,
+      error: Response.json(
+        { error: "Webhook verification secret is not configured" },
+        { status: 400 },
+      ),
+    }
+  }
+
   const endpoint = findVerifiedWebhookEndpoint({
     endpoints,
     signature,
     timestamp,
-    endpointId,
     rawBody,
   })
   if (endpoint) return { endpoint, error: null }
@@ -106,10 +116,14 @@ export async function POST(req: NextRequest, context: RouteContext) {
     return Response.json({ error: "Unknown webhook source or event" }, { status: 404 })
   }
 
-  const signature = req.headers.get("x-webhook-signature")
-  const timestamp = req.headers.get("x-webhook-timestamp")
+  const signature =
+    req.headers.get("x-postrider-signature") ?? req.headers.get("x-webhook-signature")
+  const timestamp =
+    req.headers.get("x-postrider-timestamp") ?? req.headers.get("x-webhook-timestamp")
   const endpointId =
-    req.headers.get("x-webhook-endpoint-id") ?? req.headers.get("x-controlcenter-endpoint-id")
+    req.nextUrl.searchParams.get("endpoint") ??
+    req.headers.get("x-webhook-endpoint-id") ??
+    req.headers.get("x-controlcenter-endpoint-id")
 
   if (!signature || !timestamp) {
     return unauthorized("Missing webhook signature headers")

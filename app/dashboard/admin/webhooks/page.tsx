@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma"
 import { hasPermission, requireOrg } from "@/lib/api-auth"
+import { serializeWebhookEndpoint } from "@/lib/webhooks/endpoint-response"
 import { WebhooksClient } from "./webhooks-client"
 import {
   POSTRIDER_MESSAGE_RECEIVED_EVENT_SLUG,
@@ -15,6 +16,11 @@ function getWebhookBaseUrl() {
   const configured = process.env.NEXT_PUBLIC_WEBHOOK_BASE_URL ?? process.env.WEBHOOK_PUBLIC_BASE_URL
 
   return (configured || "https://cc.clickstudio.ai").replace(/\/$/, "")
+}
+
+function buildWebhookUrl(endpointId: string | null) {
+  const path = `${getWebhookBaseUrl()}/api/webhooks/postrider/message-received`
+  return endpointId ? `${path}?endpoint=${encodeURIComponent(endpointId)}` : path
 }
 
 export default async function AdminWebhooksPage({ searchParams }: PageProps) {
@@ -71,19 +77,7 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
 
   return (
     <WebhooksClient
-      endpoint={
-        endpoint
-          ? {
-              id: endpoint.id,
-              source: endpoint.source,
-              eventSlug: endpoint.eventSlug,
-              eventType: endpoint.eventType,
-              isActive: endpoint.isActive,
-              lastReceivedAt: endpoint.lastReceivedAt?.toISOString() ?? null,
-              createdAt: endpoint.createdAt.toISOString(),
-            }
-          : null
-      }
+      endpoint={endpoint ? serializeWebhookEndpoint(endpoint) : null}
       events={events.map((event) => ({
         id: event.id,
         source: event.source,
@@ -108,7 +102,7 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
         })),
       }))}
       initialSelectedEventId={params.event}
-      webhookUrl={`${getWebhookBaseUrl()}/api/webhooks/postrider/message-received`}
+      webhookUrl={buildWebhookUrl(endpoint?.id ?? null)}
       telegramRule={
         telegramRule
           ? {

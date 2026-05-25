@@ -339,7 +339,7 @@ model WebhookEndpoint {
   source          String
   eventSlug       String
   eventType       String
-  encryptedSecret String
+  encryptedSecret String?
   isActive        Boolean   @default(true)
   lastReceivedAt  DateTime?
   createdAt       DateTime  @default(now())

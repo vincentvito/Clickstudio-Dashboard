@@ -19,10 +19,13 @@ test("endpoint resolution skips undecryptable secrets and continues scanning", (
     }
 
     const result = findVerifiedWebhookEndpoint({
-      endpoints: [{ id: "endpoint_broken", encryptedSecret: "not-encrypted" }, validEndpoint],
+      endpoints: [
+        { id: "endpoint_missing_secret", encryptedSecret: null },
+        { id: "endpoint_broken", encryptedSecret: "not-encrypted" },
+        validEndpoint,
+      ],
       signature,
       timestamp,
-      endpointId: null,
       rawBody,
     })
 

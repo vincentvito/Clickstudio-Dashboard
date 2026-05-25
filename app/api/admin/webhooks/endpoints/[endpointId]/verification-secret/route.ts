@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma"
 import { forbidden, hasPermission, requireOrg, unauthorized } from "@/lib/api-auth"
-import { encryptWebhookSigningSecret, generateWebhookSigningSecret } from "@/lib/webhooks/secrets"
+import { serializeWebhookEndpoint } from "@/lib/webhooks/endpoint-response"
+import { encryptWebhookSigningSecret } from "@/lib/webhooks/secrets"
 
 interface RouteContext {
   params: Promise<{ endpointId: string }>
@@ -14,14 +15,22 @@ const endpointSelect = {
   isActive: true,
   lastReceivedAt: true,
   createdAt: true,
+  encryptedSecret: true,
 }
 
-export async function POST(_req: Request, context: RouteContext) {
+export async function POST(req: Request, context: RouteContext) {
   const org = await requireOrg()
   if (!org) return unauthorized()
   if (!hasPermission(org.role, "update")) return forbidden()
 
   const { endpointId } = await context.params
+  const body = (await req.json().catch(() => null)) as { secret?: string } | null
+  const secret = body?.secret?.trim()
+
+  if (!secret) {
+    return Response.json({ error: "Paste the verification secret from PostRider" }, { status: 400 })
+  }
+
   const endpoint = await prisma.webhookEndpoint.findFirst({
     where: { id: endpointId, organizationId: org.organizationId },
   })
@@ -30,11 +39,9 @@ export async function POST(_req: Request, context: RouteContext) {
     return Response.json({ error: "Webhook endpoint not found" }, { status: 404 })
   }
 
-  const signingSecret = generateWebhookSigningSecret()
   let encryptedSecret: string
-
   try {
-    encryptedSecret = encryptWebhookSigningSecret(signingSecret)
+    encryptedSecret = encryptWebhookSigningSecret(secret)
   } catch {
     return Response.json(
       { error: "Webhook secret encryption key is not configured" },
@@ -44,11 +51,11 @@ export async function POST(_req: Request, context: RouteContext) {
 
   const updated = await prisma.webhookEndpoint.update({
     where: { id: endpoint.id },
-    data: {
-      encryptedSecret,
-    },
+    data: { encryptedSecret },
     select: endpointSelect,
   })
 
-  return Response.json({ endpoint: updated, signingSecret })
+  return Response.json({
+    endpoint: serializeWebhookEndpoint(updated),
+  })
 }
