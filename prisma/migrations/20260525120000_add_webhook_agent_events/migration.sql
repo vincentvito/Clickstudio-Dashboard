@@ -5,6 +5,7 @@ CREATE TABLE "webhook_endpoint" (
     "source" TEXT NOT NULL,
     "eventSlug" TEXT NOT NULL,
     "eventType" TEXT NOT NULL,
+    "signingSecretHash" TEXT NOT NULL,
     "encryptedSecret" TEXT NOT NULL,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "lastReceivedAt" TIMESTAMP(3),

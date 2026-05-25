@@ -19,6 +19,7 @@
 - Refactored webhook ingress/admin setup around a source registry so PostRider is one endpoint definition rather than hardcoded through the generic webhook route and setup APIs.
 - Moved event summary text into source normalization and added parser failure reasons so the generic Webhooks UI no longer reads PostRider-shaped payload fields directly.
 - Moved webhook event display titles into a first-class `AgentEvent.displayTitle` column so provider payloads remain unmodified.
+- Restored the originally applied webhook migration shape and added an append-only cleanup migration for the obsolete `signingSecretHash` column to avoid Prisma drift without resetting data.
 
 ## 2026-05-19
 
