@@ -361,6 +361,7 @@ model AgentEvent {
   targetUserId      String?
   externalId        String
   providerMessageId String?
+  displayTitle      String?
   payload           Json
   status            String    @default("pending")
   error             String?

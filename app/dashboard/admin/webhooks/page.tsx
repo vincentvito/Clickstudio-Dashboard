@@ -1,12 +1,8 @@
 import prisma from "@/lib/prisma"
 import { hasPermission, requireOrg } from "@/lib/api-auth"
 import { serializeWebhookEndpoint } from "@/lib/webhooks/endpoint-response"
+import { getDefaultWebhookSourceDefinition } from "@/lib/webhooks/sources"
 import { WebhooksClient } from "./webhooks-client"
-import {
-  POSTRIDER_MESSAGE_RECEIVED_EVENT_SLUG,
-  POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE,
-  POSTRIDER_SOURCE,
-} from "@/lib/webhooks/sources/postrider"
 
 interface PageProps {
   searchParams: Promise<{ event?: string }>
@@ -18,8 +14,16 @@ function getWebhookBaseUrl() {
   return (configured || "https://cc.clickstudio.ai").replace(/\/$/, "")
 }
 
-function buildWebhookUrl(endpointId: string | null) {
-  const path = `${getWebhookBaseUrl()}/api/webhooks/postrider/message-received`
+function buildWebhookUrl({
+  source,
+  eventSlug,
+  endpointId,
+}: {
+  source: string
+  eventSlug: string
+  endpointId: string | null
+}) {
+  const path = `${getWebhookBaseUrl()}/api/webhooks/${source}/${eventSlug}`
   return endpointId ? `${path}?endpoint=${encodeURIComponent(endpointId)}` : path
 }
 
@@ -28,6 +32,7 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
   const params = await searchParams
 
   if (!org) return null
+  const sourceDefinition = getDefaultWebhookSourceDefinition()
 
   if (!hasPermission(org.role, "update")) {
     return (
@@ -45,24 +50,23 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
       where: {
         organizationId_source_eventSlug: {
           organizationId: org.organizationId,
-          source: POSTRIDER_SOURCE,
-          eventSlug: POSTRIDER_MESSAGE_RECEIVED_EVENT_SLUG,
+          source: sourceDefinition.source,
+          eventSlug: sourceDefinition.eventSlug,
         },
       },
     }),
     prisma.agentRoutingRule.findMany({
       where: {
         organizationId: org.organizationId,
-        source: POSTRIDER_SOURCE,
-        eventType: POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE,
+        source: sourceDefinition.source,
+        eventType: sourceDefinition.primaryEventType,
       },
       orderBy: { createdAt: "asc" },
     }),
     prisma.agentEvent.findMany({
       where: {
         organizationId: org.organizationId,
-        source: POSTRIDER_SOURCE,
-        eventType: POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE,
+        source: sourceDefinition.source,
       },
       include: {
         deliveries: {
@@ -85,6 +89,7 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
         targetAgent: event.targetAgent,
         externalId: event.externalId,
         providerMessageId: event.providerMessageId,
+        displayTitle: event.displayTitle,
         payload: event.payload,
         status: event.status,
         error: event.error,
@@ -102,7 +107,12 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
         })),
       }))}
       initialSelectedEventId={params.event}
-      webhookUrl={buildWebhookUrl(endpoint?.id ?? null)}
+      sourceDisplay={sourceDefinition.display}
+      webhookUrl={buildWebhookUrl({
+        source: sourceDefinition.source,
+        eventSlug: sourceDefinition.eventSlug,
+        endpointId: endpoint?.id ?? null,
+      })}
       telegramRule={
         telegramRule
           ? {

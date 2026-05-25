@@ -1,19 +1,9 @@
 import { after, type NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
-import {
-  routeAgentEvent,
-  notifyPostriderMessageReceived,
-} from "@/lib/agent-events/route-agent-event"
+import { routeAgentEvent } from "@/lib/agent-events/route-agent-event"
 import { findVerifiedWebhookEndpoint } from "@/lib/webhooks/endpoint-resolution"
 import { isWebhookSignatureFormatValid, isWebhookTimestampFresh } from "@/lib/webhooks/signature"
-import {
-  getPostriderTargetAgent,
-  parsePostriderWebhookEvent,
-  POSTRIDER_MESSAGE_RECEIVED_EVENT_SLUG,
-  POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE,
-  POSTRIDER_SOURCE,
-  POSTRIDER_WEBHOOK_TEST_EVENT_TYPE,
-} from "@/lib/webhooks/sources/postrider"
+import { getWebhookSourceDefinition } from "@/lib/webhooks/sources"
 
 export const runtime = "nodejs"
 
@@ -39,6 +29,14 @@ function parseJson(rawBody: string) {
   } catch {
     return null
   }
+}
+
+function getFirstHeader(req: NextRequest, names: readonly string[]) {
+  for (const name of names) {
+    const value = req.headers.get(name)
+    if (value) return value
+  }
+  return null
 }
 
 async function resolveVerifiedEndpoint({
@@ -112,15 +110,14 @@ async function resolveVerifiedEndpoint({
 export async function POST(req: NextRequest, context: RouteContext) {
   const { source, event } = await context.params
   const rawBody = await req.text()
+  const sourceDefinition = getWebhookSourceDefinition(source, event)
 
-  if (source !== POSTRIDER_SOURCE || event !== POSTRIDER_MESSAGE_RECEIVED_EVENT_SLUG) {
+  if (!sourceDefinition) {
     return Response.json({ error: "Unknown webhook source or event" }, { status: 404 })
   }
 
-  const signature =
-    req.headers.get("x-postrider-signature") ?? req.headers.get("x-webhook-signature")
-  const timestamp =
-    req.headers.get("x-postrider-timestamp") ?? req.headers.get("x-webhook-timestamp")
+  const signature = getFirstHeader(req, sourceDefinition.signatureHeaders)
+  const timestamp = getFirstHeader(req, sourceDefinition.timestampHeaders)
   const endpointId =
     req.nextUrl.searchParams.get("endpoint") ??
     req.headers.get("x-webhook-endpoint-id") ??
@@ -139,8 +136,8 @@ export async function POST(req: NextRequest, context: RouteContext) {
   }
 
   const endpointResult = await resolveVerifiedEndpoint({
-    source,
-    event,
+    source: sourceDefinition.source,
+    event: sourceDefinition.eventSlug,
     signature,
     timestamp,
     endpointId,
@@ -156,25 +153,16 @@ export async function POST(req: NextRequest, context: RouteContext) {
     return badRequest("Invalid JSON payload")
   }
 
-  const parsedPayload = parsePostriderWebhookEvent(parsedJson)
-  if (!parsedPayload.success) {
-    return badRequest("Invalid PostRiderAI webhook payload")
+  const parsedEvent = sourceDefinition.parseEvent(parsedJson)
+  if (!parsedEvent.success) {
+    return badRequest(
+      parsedEvent.reason
+        ? `Invalid ${sourceDefinition.display.providerName} webhook payload: ${parsedEvent.reason}`
+        : `Invalid ${sourceDefinition.display.providerName} webhook payload`,
+    )
   }
 
-  const payload = parsedPayload.data
-  if (payload.event_type === POSTRIDER_WEBHOOK_TEST_EVENT_TYPE) {
-    await prisma.webhookEndpoint.update({
-      where: { id: endpoint.id },
-      data: { lastReceivedAt: new Date() },
-    })
-
-    return Response.json({
-      ok: true,
-      status: "test_received",
-      eventType: payload.event_type,
-      eventId: payload.event_id,
-    })
-  }
+  const normalizedEvent = parsedEvent.data
 
   try {
     const result = await prisma.$transaction(async (tx) => {
@@ -182,14 +170,26 @@ export async function POST(req: NextRequest, context: RouteContext) {
         where: {
           organizationId_source_eventType_externalId: {
             organizationId: endpoint.organizationId,
-            source: POSTRIDER_SOURCE,
-            eventType: POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE,
-            externalId: payload.event_id,
+            source: sourceDefinition.source,
+            eventType: normalizedEvent.eventType,
+            externalId: normalizedEvent.externalId,
           },
         },
       })
 
       if (existingEvent) {
+        if (!normalizedEvent.shouldRoute) {
+          await tx.agentEvent.update({
+            where: { id: existingEvent.id },
+            data: {
+              displayTitle: normalizedEvent.displayTitle,
+              payload: normalizedEvent.payload as never,
+              status: normalizedEvent.status,
+              handledAt: normalizedEvent.handledAt ?? new Date(),
+            },
+          })
+        }
+
         await tx.webhookEndpoint.update({
           where: { id: endpoint.id },
           data: { lastReceivedAt: new Date() },
@@ -197,30 +197,33 @@ export async function POST(req: NextRequest, context: RouteContext) {
         return { eventId: existingEvent.id, duplicate: true }
       }
 
-      const routingRules = await tx.agentRoutingRule.findMany({
-        where: {
-          organizationId: endpoint.organizationId,
-          source: POSTRIDER_SOURCE,
-          eventType: POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE,
-          isActive: true,
-        },
-        orderBy: { createdAt: "asc" },
-      })
-
-      const targetAgent =
-        routingRules.find((rule) => rule.targetAgent)?.targetAgent ??
-        getPostriderTargetAgent(payload)
+      const routingRules = normalizedEvent.shouldRoute
+        ? await tx.agentRoutingRule.findMany({
+            where: {
+              organizationId: endpoint.organizationId,
+              source: sourceDefinition.source,
+              eventType: normalizedEvent.eventType,
+              isActive: true,
+            },
+            orderBy: { createdAt: "asc" },
+          })
+        : []
 
       const agentEvent = await tx.agentEvent.create({
         data: {
           organizationId: endpoint.organizationId,
-          source: POSTRIDER_SOURCE,
-          eventType: POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE,
-          targetAgent,
-          externalId: payload.event_id,
-          providerMessageId: payload.message.message_id,
-          payload,
-          status: "pending",
+          source: sourceDefinition.source,
+          eventType: normalizedEvent.eventType,
+          targetAgent:
+            routingRules.find((rule) => rule.targetAgent)?.targetAgent ??
+            normalizedEvent.targetAgent ??
+            null,
+          externalId: normalizedEvent.externalId,
+          providerMessageId: normalizedEvent.providerMessageId ?? null,
+          displayTitle: normalizedEvent.displayTitle,
+          payload: normalizedEvent.payload as never,
+          status: normalizedEvent.status,
+          handledAt: normalizedEvent.handledAt ?? null,
         },
       })
 
@@ -243,27 +246,35 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return { eventId: agentEvent.id, duplicate: false }
     })
 
-    if (result.duplicate) {
+    if (result.duplicate && normalizedEvent.shouldRoute) {
       return Response.json({ ok: true, eventId: result.eventId, status: "duplicate" })
     }
 
-    after(() =>
-      Promise.allSettled([
-        routeAgentEvent(result.eventId),
-        notifyPostriderMessageReceived(result.eventId),
-      ]),
-    )
+    if (normalizedEvent.shouldRoute) {
+      after(() =>
+        Promise.allSettled([
+          routeAgentEvent(result.eventId),
+          ...(sourceDefinition.afterRoute ? [sourceDefinition.afterRoute(result.eventId)] : []),
+        ]),
+      )
+    }
 
-    return Response.json({ ok: true, eventId: result.eventId, status: "pending" })
+    return Response.json({
+      ok: true,
+      eventId: result.eventId,
+      status: normalizedEvent.responseStatus,
+      eventType: normalizedEvent.eventType,
+      externalId: normalizedEvent.externalId,
+    })
   } catch (error) {
     if (isUniqueConstraintError(error)) {
       const existingEvent = await prisma.agentEvent.findUnique({
         where: {
           organizationId_source_eventType_externalId: {
             organizationId: endpoint.organizationId,
-            source: POSTRIDER_SOURCE,
-            eventType: POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE,
-            externalId: payload.event_id,
+            source: sourceDefinition.source,
+            eventType: normalizedEvent.eventType,
+            externalId: normalizedEvent.externalId,
           },
         },
       })

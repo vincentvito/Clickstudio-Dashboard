@@ -1,11 +1,7 @@
 import prisma from "@/lib/prisma"
 import { forbidden, hasPermission, requireOrg, unauthorized } from "@/lib/api-auth"
 import { serializeWebhookEndpoint } from "@/lib/webhooks/endpoint-response"
-import {
-  POSTRIDER_MESSAGE_RECEIVED_EVENT_SLUG,
-  POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE,
-  POSTRIDER_SOURCE,
-} from "@/lib/webhooks/sources/postrider"
+import { getDefaultWebhookSourceDefinition } from "@/lib/webhooks/sources"
 
 const endpointSelect = {
   id: true,
@@ -29,13 +25,14 @@ export async function POST() {
   const org = await requireOrg()
   if (!org) return unauthorized()
   if (!hasPermission(org.role, "create")) return forbidden()
+  const sourceDefinition = getDefaultWebhookSourceDefinition()
 
   const existing = await prisma.webhookEndpoint.findUnique({
     where: {
       organizationId_source_eventSlug: {
         organizationId: org.organizationId,
-        source: POSTRIDER_SOURCE,
-        eventSlug: POSTRIDER_MESSAGE_RECEIVED_EVENT_SLUG,
+        source: sourceDefinition.source,
+        eventSlug: sourceDefinition.eventSlug,
       },
     },
   })
@@ -48,9 +45,9 @@ export async function POST() {
     const endpoint = await tx.webhookEndpoint.create({
       data: {
         organizationId: org.organizationId,
-        source: POSTRIDER_SOURCE,
-        eventSlug: POSTRIDER_MESSAGE_RECEIVED_EVENT_SLUG,
-        eventType: POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE,
+        source: sourceDefinition.source,
+        eventSlug: sourceDefinition.eventSlug,
+        eventType: sourceDefinition.primaryEventType,
         isActive: true,
       },
       select: endpointSelect,
@@ -59,8 +56,8 @@ export async function POST() {
     const existingTelegramRule = await tx.agentRoutingRule.findFirst({
       where: {
         organizationId: org.organizationId,
-        source: POSTRIDER_SOURCE,
-        eventType: POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE,
+        source: sourceDefinition.source,
+        eventType: sourceDefinition.primaryEventType,
         channel: "telegram",
       },
     })
@@ -74,8 +71,8 @@ export async function POST() {
       : await tx.agentRoutingRule.create({
           data: {
             organizationId: org.organizationId,
-            source: POSTRIDER_SOURCE,
-            eventType: POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE,
+            source: sourceDefinition.source,
+            eventType: sourceDefinition.primaryEventType,
             targetAgent: "Rolino",
             channel: "telegram",
             target: null,

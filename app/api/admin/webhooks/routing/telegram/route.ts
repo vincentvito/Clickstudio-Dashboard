@@ -1,9 +1,6 @@
 import prisma from "@/lib/prisma"
 import { forbidden, hasPermission, requireOrg, unauthorized } from "@/lib/api-auth"
-import {
-  POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE,
-  POSTRIDER_SOURCE,
-} from "@/lib/webhooks/sources/postrider"
+import { getDefaultWebhookSourceDefinition } from "@/lib/webhooks/sources"
 
 const routingRuleSelect = {
   id: true,
@@ -16,6 +13,7 @@ export async function POST(req: Request) {
   const org = await requireOrg()
   if (!org) return unauthorized()
   if (!hasPermission(org.role, "update")) return forbidden()
+  const sourceDefinition = getDefaultWebhookSourceDefinition()
 
   const body = (await req.json().catch(() => null)) as {
     enabled?: boolean
@@ -30,8 +28,8 @@ export async function POST(req: Request) {
   const existing = await prisma.agentRoutingRule.findFirst({
     where: {
       organizationId: org.organizationId,
-      source: POSTRIDER_SOURCE,
-      eventType: POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE,
+      source: sourceDefinition.source,
+      eventType: sourceDefinition.primaryEventType,
       channel: "telegram",
     },
   })
@@ -51,8 +49,8 @@ export async function POST(req: Request) {
     : await prisma.agentRoutingRule.create({
         data: {
           organizationId: org.organizationId,
-          source: POSTRIDER_SOURCE,
-          eventType: POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE,
+          source: sourceDefinition.source,
+          eventType: sourceDefinition.primaryEventType,
           channel: "telegram",
           ...data,
         },
