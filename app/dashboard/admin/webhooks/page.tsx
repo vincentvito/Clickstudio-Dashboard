@@ -78,6 +78,7 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
     }),
   ])
   const telegramRule = routingRules.find((rule) => rule.channel === "telegram")
+  const agentInboxRule = routingRules.find((rule) => rule.channel === "agent_poll")
 
   return (
     <WebhooksClient
@@ -120,6 +121,16 @@ export default async function AdminWebhooksPage({ searchParams }: PageProps) {
               targetAgent: telegramRule.targetAgent,
               target: telegramRule.target,
               isActive: telegramRule.isActive,
+            }
+          : null
+      }
+      agentInboxRule={
+        agentInboxRule
+          ? {
+              id: agentInboxRule.id,
+              targetAgent: agentInboxRule.targetAgent,
+              target: agentInboxRule.target,
+              isActive: agentInboxRule.isActive,
             }
           : null
       }

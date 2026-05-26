@@ -34,7 +34,11 @@ export async function POST(
 
   if (columnId !== undefined && !isValidTaskColumnId(columnId)) {
     return Response.json(
-      { error: `Unknown columnId "${columnId}"`, field: "columnId", hint: `Valid ids: ${TASK_COLUMN_IDS.join(", ")}` },
+      {
+        error: `Unknown columnId "${columnId}"`,
+        field: "columnId",
+        hint: `Valid ids: ${TASK_COLUMN_IDS.join(", ")}`,
+      },
       { status: 400 },
     )
   }

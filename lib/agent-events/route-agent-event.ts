@@ -7,10 +7,14 @@ function getDeliveryErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Delivery failed"
 }
 
+function isHandlingChannel(channel: string) {
+  return ["agent_poll", "agent_endpoint", "agent_run"].includes(channel)
+}
+
 async function updateEventStatus(eventId: string) {
   const deliveries = await prisma.agentEventDelivery.findMany({
     where: { eventId },
-    select: { status: true },
+    select: { channel: true, status: true },
   })
 
   if (deliveries.length === 0) {
@@ -21,18 +25,29 @@ async function updateEventStatus(eventId: string) {
     return
   }
 
-  const hasFailed = deliveries.some((delivery) => delivery.status === "failed")
-  const allFinished = deliveries.every((delivery) =>
+  const handlingDeliveries = deliveries.filter((delivery) => isHandlingChannel(delivery.channel))
+
+  if (handlingDeliveries.length === 0) {
+    await prisma.agentEvent.update({
+      where: { id: eventId },
+      data: { status: "open", handledAt: null },
+    })
+    return
+  }
+
+  const hasFailed = handlingDeliveries.some((delivery) => delivery.status === "failed")
+  const allOpen = handlingDeliveries.every((delivery) => delivery.status === "pending")
+  const allFinished = handlingDeliveries.every((delivery) =>
     ["delivered", "failed", "skipped"].includes(delivery.status),
   )
-  const allSuccessful = deliveries.every((delivery) =>
+  const allSuccessful = handlingDeliveries.every((delivery) =>
     ["delivered", "skipped"].includes(delivery.status),
   )
 
   await prisma.agentEvent.update({
     where: { id: eventId },
     data: {
-      status: hasFailed ? "failed" : allSuccessful ? "handled" : "routed",
+      status: hasFailed ? "failed" : allSuccessful ? "acked" : allOpen ? "open" : "processing",
       handledAt: allFinished ? new Date() : null,
     },
   })
@@ -51,6 +66,8 @@ export async function processAgentEventDelivery(deliveryId: string) {
   try {
     if (delivery.channel === "telegram") {
       await deliverTelegramAgentEvent(delivery)
+    } else if (delivery.channel === "agent_poll") {
+      return delivery
     } else {
       await prisma.agentEventDelivery.update({
         where: { id: delivery.id },
@@ -90,7 +107,7 @@ export async function processAgentEventDelivery(deliveryId: string) {
 
 export async function routeAgentEvent(eventId: string) {
   const deliveries = await prisma.agentEventDelivery.findMany({
-    where: { eventId, status: "pending" },
+    where: { eventId, status: "pending", channel: { not: "agent_poll" } },
     select: { id: true },
   })
 

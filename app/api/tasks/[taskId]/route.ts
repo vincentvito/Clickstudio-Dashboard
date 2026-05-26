@@ -19,7 +19,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ta
     include: { assignees: { select: { id: true } } },
   })
 
-
   if (!task) {
     return Response.json({ error: "Not found" }, { status: 404 })
   }
@@ -28,7 +27,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ta
 
   if (body.columnId !== undefined && !isValidTaskColumnId(body.columnId)) {
     return Response.json(
-      { error: `Unknown columnId "${body.columnId}"`, field: "columnId", hint: `Valid ids: ${TASK_COLUMN_IDS.join(", ")}` },
+      {
+        error: `Unknown columnId "${body.columnId}"`,
+        field: "columnId",
+        hint: `Valid ids: ${TASK_COLUMN_IDS.join(", ")}`,
+      },
       { status: 400 },
     )
   }
@@ -51,8 +54,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ta
     newAssigneeIds = validIds.filter((id) => !existingIds.has(id))
   }
 
-  const columnChanged =
-    body.columnId !== undefined && body.columnId !== task.columnId
+  const columnChanged = body.columnId !== undefined && body.columnId !== task.columnId
 
   const updated = await prisma.$transaction(async (tx) => {
     const result = await tx.task.update({

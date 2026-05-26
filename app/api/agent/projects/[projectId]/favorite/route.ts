@@ -1,14 +1,7 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
-import {
-  requireAgent,
-  isAgentResponse,
-  canAccessProject,
-} from "@/lib/agent-auth"
-import {
-  detectUnknownFields,
-  unknownFieldWarnings,
-} from "@/lib/agent-fields"
+import { requireAgent, isAgentResponse, canAccessProject } from "@/lib/agent-auth"
+import { detectUnknownFields, unknownFieldWarnings } from "@/lib/agent-fields"
 
 const FAVORITE_FIELDS = ["favorite"] as const
 

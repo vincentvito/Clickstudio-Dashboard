@@ -85,6 +85,7 @@ interface SourceDisplayView {
 interface WebhooksClientProps {
   endpoint: EndpointView | null
   telegramRule: RoutingRuleView | null
+  agentInboxRule: RoutingRuleView | null
   events: EventView[]
   initialSelectedEventId?: string
   sourceDisplay: SourceDisplayView
@@ -116,7 +117,7 @@ function getDisplayTitle(event: EventView) {
 }
 
 function getStatusVariant(status: string) {
-  if (["delivered", "handled", "active"].includes(status)) return "default"
+  if (["delivered", "handled", "acked", "active"].includes(status)) return "default"
   if (["failed", "inactive"].includes(status)) return "destructive"
   return "secondary"
 }
@@ -129,6 +130,7 @@ function getDeliverySummary(event: EventView) {
 export function WebhooksClient({
   endpoint: initialEndpoint,
   telegramRule: initialTelegramRule,
+  agentInboxRule: initialAgentInboxRule,
   events,
   initialSelectedEventId,
   sourceDisplay,
@@ -137,6 +139,10 @@ export function WebhooksClient({
   const router = useRouter()
   const [endpoint, setEndpoint] = useState(initialEndpoint)
   const [telegramRule, setTelegramRule] = useState(initialTelegramRule)
+  const [agentInboxRule, setAgentInboxRule] = useState(initialAgentInboxRule)
+  const [agentInboxTarget, setAgentInboxTarget] = useState(
+    initialAgentInboxRule?.targetAgent ?? "Rolino",
+  )
   const [telegramTarget, setTelegramTarget] = useState(initialTelegramRule?.target ?? "")
   const [verificationSecret, setVerificationSecret] = useState("")
   const [creatingEndpoint, setCreatingEndpoint] = useState(false)
@@ -181,6 +187,13 @@ export function WebhooksClient({
         target: data.telegramRule.target,
         isActive: data.telegramRule.isActive,
       })
+      setAgentInboxRule({
+        id: data.agentInboxRule.id,
+        targetAgent: data.agentInboxRule.targetAgent,
+        target: data.agentInboxRule.target,
+        isActive: data.agentInboxRule.isActive,
+      })
+      setAgentInboxTarget(data.agentInboxRule.targetAgent ?? "Rolino")
       setTelegramTarget(data.telegramRule.target ?? "")
       router.refresh()
       toast.success("Webhook endpoint created")
@@ -275,6 +288,44 @@ export function WebhooksClient({
 
   async function toggleTelegram(enabled: boolean) {
     await saveTelegramRouting(enabled)
+  }
+
+  async function saveAgentInboxRouting(enabled = agentInboxRule?.isActive ?? false) {
+    setRoutingSaving(true)
+    try {
+      const response = await fetch("/api/admin/webhooks/routing/agent-inbox", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          enabled,
+          targetAgent: agentInboxTarget,
+        }),
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        toast.error(data.error ?? "Failed to update agent inbox routing")
+        return
+      }
+
+      setAgentInboxRule({
+        id: data.rule.id,
+        targetAgent: data.rule.targetAgent,
+        target: data.rule.target,
+        isActive: data.rule.isActive,
+      })
+      setAgentInboxTarget(data.rule.targetAgent ?? "Rolino")
+      router.refresh()
+      toast.success("Agent inbox routing updated")
+    } catch {
+      toast.error("Failed to update agent inbox routing")
+    } finally {
+      setRoutingSaving(false)
+    }
+  }
+
+  async function toggleAgentInbox(enabled: boolean) {
+    await saveAgentInboxRouting(enabled)
   }
 
   async function retryDelivery(deliveryId: string) {
@@ -493,12 +544,44 @@ export function WebhooksClient({
                   </Button>
                 </div>
               </div>
-              <div className="flex items-center justify-between gap-4 rounded-md border px-4 py-3">
-                <label className="flex items-center gap-3 text-sm font-medium">
-                  <input type="checkbox" disabled className="size-4" />
-                  Agent endpoint
-                </label>
-                <Badge variant="outline">Later</Badge>
+              <div className="flex flex-col gap-4 rounded-md border px-4 py-3">
+                <div className="flex items-center justify-between gap-4">
+                  <label className="flex items-center gap-3 text-sm font-medium">
+                    <input
+                      type="checkbox"
+                      checked={agentInboxRule?.isActive ?? false}
+                      disabled={routingSaving}
+                      onChange={(event) => toggleAgentInbox(event.target.checked)}
+                      className="accent-primary size-4"
+                    />
+                    Agent inbox
+                  </label>
+                  <Badge variant={agentInboxRule?.isActive ? "default" : "secondary"}>
+                    {agentInboxRule?.isActive ? "Enabled" : "Disabled"}
+                  </Badge>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                  <div className="flex flex-col gap-1">
+                    <Input
+                      value={agentInboxTarget}
+                      onChange={(event) => setAgentInboxTarget(event.target.value)}
+                      placeholder="Agent name, e.g. Rolino"
+                      disabled={routingSaving}
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      Makes events available through `ccctl events next` without exposing an agent
+                      endpoint.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={routingSaving}
+                    onClick={() => saveAgentInboxRouting()}
+                  >
+                    {routingSaving ? "Saving" : "Save agent"}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -1,10 +1,6 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
-import {
-  requireAgent,
-  isAgentResponse,
-  canAccessProject,
-} from "@/lib/agent-auth"
+import { requireAgent, isAgentResponse, canAccessProject } from "@/lib/agent-auth"
 import { diffMentions } from "@/lib/mentions"
 import { createNotifications } from "@/lib/notifications"
 import { resolveMentionRecipients } from "@/lib/mention-recipients"
@@ -20,10 +16,7 @@ const AUTHOR_SELECT = {
 
 const NOTE_UPDATE_FIELDS = ["title", "content"] as const
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ noteId: string }> },
-) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ noteId: string }> }) {
   const ctx = await requireAgent(req, "notes:read")
   if (isAgentResponse(ctx)) return ctx
 
@@ -49,10 +42,7 @@ export async function GET(
   })
 }
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ noteId: string }> },
-) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ noteId: string }> }) {
   const ctx = await requireAgent(req, "notes:write")
   if (isAgentResponse(ctx)) return ctx
 

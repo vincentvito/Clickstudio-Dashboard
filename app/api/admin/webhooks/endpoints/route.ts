@@ -14,7 +14,7 @@ const endpointSelect = {
   encryptedSecret: true,
 }
 
-const telegramRuleSelect = {
+const routingRuleSelect = {
   id: true,
   targetAgent: true,
   target: true,
@@ -41,7 +41,7 @@ export async function POST() {
     return Response.json({ error: "Webhook endpoint already exists" }, { status: 409 })
   }
 
-  const { endpoint, telegramRule } = await prisma.$transaction(async (tx) => {
+  const { endpoint, telegramRule, agentInboxRule } = await prisma.$transaction(async (tx) => {
     const endpoint = await tx.webhookEndpoint.create({
       data: {
         organizationId: org.organizationId,
@@ -66,7 +66,7 @@ export async function POST() {
       ? await tx.agentRoutingRule.update({
           where: { id: existingTelegramRule.id },
           data: { targetAgent: existingTelegramRule.targetAgent ?? "Rolino", isActive: true },
-          select: telegramRuleSelect,
+          select: routingRuleSelect,
         })
       : await tx.agentRoutingRule.create({
           data: {
@@ -78,14 +78,43 @@ export async function POST() {
             target: null,
             isActive: true,
           },
-          select: telegramRuleSelect,
+          select: routingRuleSelect,
         })
 
-    return { endpoint, telegramRule }
+    const existingAgentInboxRule = await tx.agentRoutingRule.findFirst({
+      where: {
+        organizationId: org.organizationId,
+        source: sourceDefinition.source,
+        eventType: sourceDefinition.primaryEventType,
+        channel: "agent_poll",
+      },
+    })
+
+    const agentInboxRule = existingAgentInboxRule
+      ? await tx.agentRoutingRule.update({
+          where: { id: existingAgentInboxRule.id },
+          data: { targetAgent: existingAgentInboxRule.targetAgent ?? "Rolino", isActive: true },
+          select: routingRuleSelect,
+        })
+      : await tx.agentRoutingRule.create({
+          data: {
+            organizationId: org.organizationId,
+            source: sourceDefinition.source,
+            eventType: sourceDefinition.primaryEventType,
+            targetAgent: "Rolino",
+            channel: "agent_poll",
+            target: null,
+            isActive: true,
+          },
+          select: routingRuleSelect,
+        })
+
+    return { endpoint, telegramRule, agentInboxRule }
   })
 
   return Response.json({
     endpoint: serializeWebhookEndpoint(endpoint),
     telegramRule,
+    agentInboxRule,
   })
 }

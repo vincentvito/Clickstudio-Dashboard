@@ -46,7 +46,7 @@ export function IdeaFloatingButton() {
           onPointerEnter={preload}
           onFocus={preload}
           aria-label="Drop idea"
-          className="group relative inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-3 text-sm font-semibold text-yellow-950 shadow-lg shadow-yellow-500/40 ring-1 ring-yellow-300 transition-all hover:scale-[1.04] hover:bg-yellow-300 hover:shadow-yellow-500/60 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:bg-yellow-300 dark:text-yellow-950 dark:shadow-yellow-400/40 dark:hover:bg-yellow-200 dark:hover:shadow-yellow-400/60"
+          className="group focus-visible:ring-offset-background relative inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-3 text-sm font-semibold text-yellow-950 shadow-lg ring-1 shadow-yellow-500/40 ring-yellow-300 transition-all hover:scale-[1.04] hover:bg-yellow-300 hover:shadow-yellow-500/60 focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2 focus-visible:outline-none active:scale-[0.97] dark:bg-yellow-300 dark:text-yellow-950 dark:shadow-yellow-400/40 dark:hover:bg-yellow-200 dark:hover:shadow-yellow-400/60"
         >
           <Lightbulb className="size-4 transition-transform group-hover:rotate-[-8deg]" />
           Idea

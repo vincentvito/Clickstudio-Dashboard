@@ -2,13 +2,13 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import { formatTelegramAgentEventMessage } from "@/lib/agent-events/deliveries/telegram"
 
-test("Telegram delivery summarizes sensitive codes without exposing them", () => {
-  const text = formatTelegramAgentEventMessage({
+function createDelivery(targetAgent: string | null = "Rolino") {
+  return {
     id: "delivery_123",
     target: "12345",
     event: {
       id: "event_123",
-      targetAgent: "Rolino",
+      targetAgent,
       externalId: "evt_abc123",
       providerMessageId: "msg_123",
       payload: {
@@ -34,9 +34,27 @@ test("Telegram delivery summarizes sensitive codes without exposing them", () =>
         },
       },
     },
+  }
+}
+
+test("Telegram delivery mentions the configured agent with fetch action and no sensitive codes", () => {
+  const text = formatTelegramAgentEventMessage({
+    ...createDelivery("Rolino"),
   })
 
-  assert.match(text, /Codes detected: 1/)
-  assert.match(text, /Links detected: 0/)
+  assert.match(text, /@RolinoBot New PostRiderAI message for Rolino/)
+  assert.match(text, /Message ID: msg_123/)
+  assert.match(text, /Subject: Your code/)
+  assert.match(text, /From: Example <noreply@example.com>/)
+  assert.match(text, /Action: Fetch and process this email\./)
   assert.doesNotMatch(text, /123456/)
+})
+
+test("Telegram delivery uses the configured non-Rolino agent name", () => {
+  const text = formatTelegramAgentEventMessage({
+    ...createDelivery("Hermes"),
+  })
+
+  assert.match(text, /@HermesBot New PostRiderAI message for Hermes/)
+  assert.doesNotMatch(text, /Rolino/)
 })

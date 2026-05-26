@@ -2,10 +2,7 @@ import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
 import { resolveAgentContext } from "@/lib/agent-auth"
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const ctx = await resolveAgentContext(req)
   if (!ctx) {
     return Response.json(

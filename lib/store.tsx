@@ -3,7 +3,16 @@
 import { useMemo } from "react"
 import useSWR, { mutate } from "swr"
 import { toast } from "sonner"
-import type { Project, Task, LogEntry, Note, WikiEntry, UserSummary, Notification, Idea } from "./types"
+import type {
+  Project,
+  Task,
+  LogEntry,
+  Note,
+  WikiEntry,
+  UserSummary,
+  Notification,
+  Idea,
+} from "./types"
 import { isIdeaNameSearchStuck } from "@/lib/ideas/name-search-status"
 
 const fetcher = (url: string) =>
@@ -261,10 +270,7 @@ export function useOrgMembers(projectId?: string) {
   const key = projectId
     ? `/api/org/members/list?projectId=${encodeURIComponent(projectId)}`
     : "/api/org/members/list"
-  const { data, isLoading } = useSWR<(UserSummary & { role: string })[]>(
-    key,
-    fetcher,
-  )
+  const { data, isLoading } = useSWR<(UserSummary & { role: string })[]>(key, fetcher)
   return { members: data ?? [], isLoading }
 }
 

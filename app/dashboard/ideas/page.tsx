@@ -16,9 +16,7 @@ export default function IdeasPage() {
         <Lightbulb className="text-muted-foreground size-4" />
         <h1 className="text-foreground text-lg font-bold tracking-tight">Ideas</h1>
         {pending.length > 0 && (
-          <span className="text-muted-foreground/60 text-sm tabular-nums">
-            {pending.length}
-          </span>
+          <span className="text-muted-foreground/60 text-sm tabular-nums">{pending.length}</span>
         )}
       </div>
 

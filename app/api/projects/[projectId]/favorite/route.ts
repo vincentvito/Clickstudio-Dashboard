@@ -37,9 +37,7 @@ export async function POST(
   await prisma.project.update({
     where: { id: projectId },
     data: {
-      favoritedBy: isFavorite
-        ? { connect: { id: userId } }
-        : { disconnect: { id: userId } },
+      favoritedBy: isFavorite ? { connect: { id: userId } } : { disconnect: { id: userId } },
     },
   })
 

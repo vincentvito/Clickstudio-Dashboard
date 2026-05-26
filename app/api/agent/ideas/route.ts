@@ -1,11 +1,7 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
 import { requireAgent, isAgentResponse } from "@/lib/agent-auth"
-import {
-  detectUnknownFields,
-  unknownFieldWarnings,
-  fieldError,
-} from "@/lib/agent-fields"
+import { detectUnknownFields, unknownFieldWarnings, fieldError } from "@/lib/agent-fields"
 
 const USER_SELECT = { id: true, name: true, email: true, image: true, isAgent: true } as const
 

@@ -309,7 +309,12 @@ function ProjectMenuItem({
   project,
   isActive,
 }: {
-  project: { id: string; title: string; state: keyof typeof PROJECT_STATE_CONFIG; isFavorite?: boolean }
+  project: {
+    id: string
+    title: string
+    state: keyof typeof PROJECT_STATE_CONFIG
+    isFavorite?: boolean
+  }
   isActive: boolean
 }) {
   const stateConfig = PROJECT_STATE_CONFIG[project.state]
@@ -342,9 +347,7 @@ function ProjectMenuItem({
       >
         <Star className={cn(isFavorite && "fill-current")} />
       </SidebarMenuAction>
-      {taskCount > 0 && (
-        <SidebarMenuBadge className="right-7">{taskCount}</SidebarMenuBadge>
-      )}
+      {taskCount > 0 && <SidebarMenuBadge className="right-7">{taskCount}</SidebarMenuBadge>}
     </SidebarMenuItem>
   )
 }

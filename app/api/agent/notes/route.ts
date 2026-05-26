@@ -1,18 +1,10 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
-import {
-  requireAgent,
-  isAgentResponse,
-  canAccessProject,
-} from "@/lib/agent-auth"
+import { requireAgent, isAgentResponse, canAccessProject } from "@/lib/agent-auth"
 import { extractMentionedUserIds } from "@/lib/mentions"
 import { createNotifications } from "@/lib/notifications"
 import { resolveMentionRecipients } from "@/lib/mention-recipients"
-import {
-  detectUnknownFields,
-  unknownFieldWarnings,
-  fieldError,
-} from "@/lib/agent-fields"
+import { detectUnknownFields, unknownFieldWarnings, fieldError } from "@/lib/agent-fields"
 
 const AUTHOR_SELECT = {
   id: true,
@@ -22,12 +14,7 @@ const AUTHOR_SELECT = {
   isAgent: true,
 } as const
 
-const NOTE_CREATE_FIELDS = [
-  "projectId",
-  "project",
-  "title",
-  "content",
-] as const
+const NOTE_CREATE_FIELDS = ["projectId", "project", "title", "content"] as const
 
 export async function GET(req: NextRequest) {
   const ctx = await requireAgent(req, "notes:read")
@@ -113,9 +100,7 @@ export async function POST(req: NextRequest) {
 
   // Mention notifications, mirroring the session-auth note POST. An agent
   // that drops a note with @[Name](id) markup gets the same reach as a human.
-  const mentionedIds = extractMentionedUserIds(content).filter(
-    (id) => id !== ctx.agentUserId,
-  )
+  const mentionedIds = extractMentionedUserIds(content).filter((id) => id !== ctx.agentUserId)
   const recipients = await resolveMentionRecipients(ctx.organizationId, mentionedIds, {
     projectId,
   })

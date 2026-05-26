@@ -17,7 +17,9 @@ export async function GET(
     include: {
       tasks: {
         orderBy: { position: "asc" },
-        include: { assignees: { select: { id: true, name: true, email: true, image: true, isAgent: true } } },
+        include: {
+          assignees: { select: { id: true, name: true, email: true, image: true, isAgent: true } },
+        },
       },
       logs: { orderBy: { createdAt: "desc" } },
       user: { select: { id: true, name: true, email: true, image: true, isAgent: true } },
@@ -55,8 +57,7 @@ export async function PATCH(
     return Response.json({ error: "Not found" }, { status: 404 })
   }
 
-  const nextState =
-    body.state !== undefined ? (stateToPrisma(body.state) as any) : undefined
+  const nextState = body.state !== undefined ? (stateToPrisma(body.state) as any) : undefined
   const stateChanged = nextState !== undefined && nextState !== project.state
 
   const updated = await prisma.$transaction(async (tx) => {

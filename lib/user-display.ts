@@ -11,10 +11,7 @@ type DisplayUser = {
 // turn the prefix into mojibake.
 const AGENT_PREFIX = "\u{1F916} "
 
-export function displayName(
-  user: DisplayUser | null | undefined,
-  fallback = "Unknown",
-): string {
+export function displayName(user: DisplayUser | null | undefined, fallback = "Unknown"): string {
   if (!user) return fallback
   const base = user.name?.trim() || user.email?.split("@")[0] || fallback
   return user.isAgent ? `${AGENT_PREFIX}${base}` : base
@@ -28,8 +25,6 @@ export function plainName(
   return user.name?.trim() || user.email?.split("@")[0] || fallback
 }
 
-export function isAgentUser(
-  user: Pick<UserSummary, "isAgent"> | null | undefined,
-): boolean {
+export function isAgentUser(user: Pick<UserSummary, "isAgent"> | null | undefined): boolean {
   return !!user?.isAgent
 }

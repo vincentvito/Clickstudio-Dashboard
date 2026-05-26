@@ -1,18 +1,10 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
-import {
-  requireAgent,
-  isAgentResponse,
-  canAccessProject,
-} from "@/lib/agent-auth"
+import { requireAgent, isAgentResponse, canAccessProject } from "@/lib/agent-auth"
 import { extractMentionedUserIds } from "@/lib/mentions"
 import { createNotifications } from "@/lib/notifications"
 import { resolveMentionRecipients } from "@/lib/mention-recipients"
-import {
-  detectUnknownFields,
-  unknownFieldWarnings,
-  fieldError,
-} from "@/lib/agent-fields"
+import { detectUnknownFields, unknownFieldWarnings, fieldError } from "@/lib/agent-fields"
 
 const LOG_CREATE_FIELDS = ["projectId", "project", "text", "message"] as const
 

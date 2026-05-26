@@ -20,11 +20,6 @@ export function unknownFieldWarnings(unknown: string[]): string[] {
   return unknown.map((k) => `Unknown field "${k}" was ignored — check spelling or scope`)
 }
 
-export function fieldError(
-  field: string,
-  message: string,
-  hint?: string,
-  status = 400,
-): Response {
+export function fieldError(field: string, message: string, hint?: string, status = 400): Response {
   return Response.json({ error: message, field, ...(hint && { hint }) }, { status })
 }

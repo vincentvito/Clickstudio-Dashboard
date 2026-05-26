@@ -18,16 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
-import {
-  ArrowLeft,
-  Bot,
-  Copy,
-  KeyRound,
-  Loader2,
-  Plus,
-  ShieldOff,
-  Sparkles,
-} from "lucide-react"
+import { ArrowLeft, Bot, Copy, KeyRound, Loader2, Plus, ShieldOff, Sparkles } from "lucide-react"
 
 const ALL_SCOPES = [
   { id: "org:read", label: "Read org", orgWide: true },
@@ -204,8 +195,8 @@ export default function AgentTokensPage() {
             Agent tokens
           </h1>
           <p className="text-muted-foreground mt-1.5 max-w-xl text-sm">
-            Issue scoped bearer tokens so AI agents and CLIs can act on this organization
-            without using a user account. Each token gets its own 🤖 agent identity.
+            Issue scoped bearer tokens so AI agents and CLIs can act on this organization without
+            using a user account. Each token gets its own 🤖 agent identity.
           </p>
         </div>
         <Button onClick={() => setCreateOpen(true)}>
@@ -248,67 +239,67 @@ export default function AgentTokensPage() {
               No active tokens. Switch to “All” to see revoked or expired tokens.
             </div>
           ) : (
-        <ul className="space-y-2.5">
-          {visibleTokens.map((t) => {
-            const isRevoked = !!t.revokedAt
-            const isExpired = t.expiresAt && new Date(t.expiresAt).getTime() < Date.now()
-            const isInactive = isRevoked || isExpired
-            return (
-              <li
-                key={t.id}
-                className="bg-card hover:border-border group flex items-center gap-4 rounded-xl border border-transparent px-4 py-3.5 transition-colors"
-              >
-                <div className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-lg text-base">
-                  🤖
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-medium">{t.name}</span>
-                    {isRevoked ? (
-                      <Badge variant="outline" className="text-muted-foreground">
-                        Revoked
-                      </Badge>
-                    ) : isExpired ? (
-                      <Badge variant="outline" className="text-muted-foreground">
-                        Expired
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="outline"
-                        className="border-emerald-400/20 bg-emerald-400/10 text-emerald-400"
-                      >
-                        Active
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-                    <code className="bg-muted rounded px-1.5 py-0.5 font-mono text-[11px]">
-                      {t.tokenPrefix}…
-                    </code>
-                    <span>
-                      {t.scopes.length} scope{t.scopes.length === 1 ? "" : "s"}
-                    </span>
-                    <span>·</span>
-                    <span>last used {relativeTime(t.lastUsedAt)}</span>
-                    <span>·</span>
-                    <span>by {t.createdBy.name || t.createdBy.email}</span>
-                  </div>
-                </div>
-                {!isInactive && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100"
-                    onClick={() => setRevokeTarget(t)}
+            <ul className="space-y-2.5">
+              {visibleTokens.map((t) => {
+                const isRevoked = !!t.revokedAt
+                const isExpired = t.expiresAt && new Date(t.expiresAt).getTime() < Date.now()
+                const isInactive = isRevoked || isExpired
+                return (
+                  <li
+                    key={t.id}
+                    className="bg-card hover:border-border group flex items-center gap-4 rounded-xl border border-transparent px-4 py-3.5 transition-colors"
                   >
-                    <ShieldOff className="size-4" />
-                    Revoke
-                  </Button>
-                )}
-              </li>
-            )
-          })}
-        </ul>
+                    <div className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-lg text-base">
+                      🤖
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-sm font-medium">{t.name}</span>
+                        {isRevoked ? (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            Revoked
+                          </Badge>
+                        ) : isExpired ? (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            Expired
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="border-emerald-400/20 bg-emerald-400/10 text-emerald-400"
+                          >
+                            Active
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                        <code className="bg-muted rounded px-1.5 py-0.5 font-mono text-[11px]">
+                          {t.tokenPrefix}…
+                        </code>
+                        <span>
+                          {t.scopes.length} scope{t.scopes.length === 1 ? "" : "s"}
+                        </span>
+                        <span>·</span>
+                        <span>last used {relativeTime(t.lastUsedAt)}</span>
+                        <span>·</span>
+                        <span>by {t.createdBy.name || t.createdBy.email}</span>
+                      </div>
+                    </div>
+                    {!isInactive && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100"
+                        onClick={() => setRevokeTarget(t)}
+                      >
+                        <ShieldOff className="size-4" />
+                        Revoke
+                      </Button>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
           )}
         </>
       )}
@@ -380,8 +371,8 @@ export default function AgentTokensPage() {
           <DialogHeader>
             <DialogTitle>Token created — copy it now</DialogTitle>
             <DialogDescription>
-              This is the only time the full token will be shown. After closing this dialog you
-              will not be able to retrieve it again.
+              This is the only time the full token will be shown. After closing this dialog you will
+              not be able to retrieve it again.
             </DialogDescription>
           </DialogHeader>
           {revealed && (

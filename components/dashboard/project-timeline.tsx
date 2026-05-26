@@ -48,11 +48,7 @@ export function ProjectTimeline({ projectId, active }: ProjectTimelineProps) {
   }
 
   if (entries.length === 0) {
-    return (
-      <p className="text-muted-foreground py-20 text-center text-sm">
-        No activity yet
-      </p>
-    )
+    return <p className="text-muted-foreground py-20 text-center text-sm">No activity yet</p>
   }
 
   return (
@@ -90,13 +86,7 @@ function Marker({ entry }: { entry: TimelineEntry }) {
   )
 }
 
-function TimelineRow({
-  entry,
-  durationMs,
-}: {
-  entry: TimelineEntry
-  durationMs: number | null
-}) {
+function TimelineRow({ entry, durationMs }: { entry: TimelineEntry; durationMs: number | null }) {
   const actorName = entry.user ? displayName(entry.user) : "System"
 
   return (
@@ -110,9 +100,7 @@ function TimelineRow({
             </span>
           )}
         </p>
-        <p className="text-muted-foreground/70 mt-0.5 text-[11px]">
-          {actorName}
-        </p>
+        <p className="text-muted-foreground/70 mt-0.5 text-[11px]">{actorName}</p>
       </div>
       <span className="text-muted-foreground/50 shrink-0 text-[11px] tabular-nums">
         {relativeTime(entry.at)}
@@ -148,9 +136,8 @@ function EntryText({ entry }: { entry: TimelineEntry }) {
   }
   return (
     <>
-      Moved <Quote>{entry.taskTitle}</Quote> from{" "}
-      <Tag>{taskColumnLabel(entry.fromColumnId)}</Tag> to{" "}
-      <Tag>{taskColumnLabel(entry.toColumnId)}</Tag>
+      Moved <Quote>{entry.taskTitle}</Quote> from <Tag>{taskColumnLabel(entry.fromColumnId)}</Tag>{" "}
+      to <Tag>{taskColumnLabel(entry.toColumnId)}</Tag>
     </>
   )
 }
@@ -160,18 +147,12 @@ function Tag({ children }: { children: React.ReactNode }) {
 }
 
 function Quote({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="text-foreground font-medium">
-      &ldquo;{children}&rdquo;
-    </span>
-  )
+  return <span className="text-foreground font-medium">&ldquo;{children}&rdquo;</span>
 }
 
 function scopeLabel(entry: TimelineEntry): string {
   if (entry.kind === "project_state") {
     return entry.fromState ? `in ${entry.fromState}` : ""
   }
-  return entry.fromColumnId
-    ? `in ${taskColumnLabel(entry.fromColumnId)}`
-    : ""
+  return entry.fromColumnId ? `in ${taskColumnLabel(entry.fromColumnId)}` : ""
 }

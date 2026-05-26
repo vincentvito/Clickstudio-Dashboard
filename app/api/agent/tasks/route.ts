@@ -1,18 +1,10 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
-import {
-  requireAgent,
-  isAgentResponse,
-  canAccessProject,
-} from "@/lib/agent-auth"
+import { requireAgent, isAgentResponse, canAccessProject } from "@/lib/agent-auth"
 import { extractMentionedUserIds } from "@/lib/mentions"
 import { createNotifications } from "@/lib/notifications"
 import { resolveMentionRecipients } from "@/lib/mention-recipients"
-import {
-  detectUnknownFields,
-  unknownFieldWarnings,
-  fieldError,
-} from "@/lib/agent-fields"
+import { detectUnknownFields, unknownFieldWarnings, fieldError } from "@/lib/agent-fields"
 import { TASK_COLUMN_IDS, isValidTaskColumnId } from "@/lib/constants"
 
 const ASSIGNEE_SELECT = {
@@ -37,7 +29,6 @@ const TASK_CREATE_FIELDS = [
   "assigneeIds",
 ] as const
 
-
 export async function GET(req: NextRequest) {
   const ctx = await requireAgent(req, "tasks:read")
   if (isAgentResponse(ctx)) return ctx
@@ -49,7 +40,10 @@ export async function GET(req: NextRequest) {
     return Response.json({ error: "?project=<id> is required" }, { status: 400 })
   }
   if (!canAccessProject(ctx, projectId)) {
-    return Response.json({ error: "Forbidden", hint: "Project not in token scope" }, { status: 403 })
+    return Response.json(
+      { error: "Forbidden", hint: "Project not in token scope" },
+      { status: 403 },
+    )
   }
 
   // Make sure the project exists in this org
@@ -135,8 +129,7 @@ export async function POST(req: NextRequest) {
   const rawAssigneeIds: unknown = body.assigneeIds
   const hasExplicitAssignees =
     Array.isArray(rawAssigneeIds) && rawAssigneeIds.every((v) => typeof v === "string")
-  const explicitAssignToSelf =
-    typeof body.assignToSelf === "boolean" ? body.assignToSelf : null
+  const explicitAssignToSelf = typeof body.assignToSelf === "boolean" ? body.assignToSelf : null
   const assignToSelf = explicitAssignToSelf ?? !hasExplicitAssignees
 
   const validatedAssigneeIds = hasExplicitAssignees

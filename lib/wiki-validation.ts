@@ -60,11 +60,7 @@ function readString(
 
   if (typeof value !== "string") {
     return {
-      response: errorResponse(
-        `${field} must be text`,
-        field,
-        `Send ${field} as a string value.`,
-      ),
+      response: errorResponse(`${field} must be text`, field, `Send ${field} as a string value.`),
     }
   }
 

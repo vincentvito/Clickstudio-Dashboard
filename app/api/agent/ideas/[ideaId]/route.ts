@@ -4,10 +4,7 @@ import { requireAgent, isAgentResponse } from "@/lib/agent-auth"
 
 const USER_SELECT = { id: true, name: true, email: true, image: true, isAgent: true } as const
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ ideaId: string }> },
-) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ ideaId: string }> }) {
   const ctx = await requireAgent(req, "ideas:read")
   if (isAgentResponse(ctx)) return ctx
 

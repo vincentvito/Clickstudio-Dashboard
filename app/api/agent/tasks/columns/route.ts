@@ -10,7 +10,5 @@ export async function GET(req: NextRequest) {
   const ctx = await requireAgent(req, "tasks:read")
   if (isAgentResponse(ctx)) return ctx
 
-  return Response.json(
-    Object.entries(TASK_COLUMN_LABELS).map(([id, label]) => ({ id, label })),
-  )
+  return Response.json(Object.entries(TASK_COLUMN_LABELS).map(([id, label]) => ({ id, label })))
 }

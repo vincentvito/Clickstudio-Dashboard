@@ -2,11 +2,7 @@ import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
 import { requireAgent, isAgentResponse } from "@/lib/agent-auth"
 import { detectUnknownFields, unknownFieldWarnings } from "@/lib/agent-fields"
-import {
-  normalizeWikiCreate,
-  readWikiBody,
-  wikiAuthorSelect,
-} from "@/lib/wiki-validation"
+import { normalizeWikiCreate, readWikiBody, wikiAuthorSelect } from "@/lib/wiki-validation"
 
 const WIKI_CREATE_FIELDS = ["title", "links", "content", "tags"] as const
 
@@ -49,10 +45,12 @@ export async function GET(req: NextRequest) {
   })
 
   const filtered = search
-    ? entries.filter((e) => {
-        const hay = `${e.title}\n${e.links}\n${e.content}\n${e.tags}`.toLowerCase()
-        return hay.includes(search)
-      }).slice(0, limit)
+    ? entries
+        .filter((e) => {
+          const hay = `${e.title}\n${e.links}\n${e.content}\n${e.tags}`.toLowerCase()
+          return hay.includes(search)
+        })
+        .slice(0, limit)
     : entries
 
   return Response.json(filtered.map(serialize))

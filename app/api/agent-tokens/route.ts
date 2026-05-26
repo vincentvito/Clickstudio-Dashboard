@@ -45,9 +45,7 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Token name is required" }, { status: 400 })
   }
 
-  const validScopes = scopes.filter((s): s is AgentScope =>
-    (ALL_SCOPES as string[]).includes(s),
-  )
+  const validScopes = scopes.filter((s): s is AgentScope => (ALL_SCOPES as string[]).includes(s))
   if (validScopes.length === 0) {
     return Response.json({ error: "At least one valid scope is required" }, { status: 400 })
   }
@@ -73,7 +71,10 @@ export async function POST(req: NextRequest) {
       select: { id: true },
     })
     if (owned.length !== projectIds.length) {
-      return Response.json({ error: "One or more projects do not belong to this org" }, { status: 400 })
+      return Response.json(
+        { error: "One or more projects do not belong to this org" },
+        { status: 400 },
+      )
     }
   }
 

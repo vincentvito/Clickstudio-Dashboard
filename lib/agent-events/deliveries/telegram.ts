@@ -21,6 +21,19 @@ function formatSender(payload: PostriderMessageReceivedPayload) {
     : payload.message.from
 }
 
+function formatAgentAnnouncement(agentName: string | null) {
+  const displayName = agentName?.trim() || "Rolino"
+
+  if (displayName.startsWith("@")) {
+    return `${displayName} New PostRiderAI message for ${displayName.slice(1)}`
+  }
+
+  const compactName = displayName.replace(/[^A-Za-z0-9_]/g, "")
+  const mention = compactName ? `@${compactName}Bot ` : ""
+
+  return `${mention}New PostRiderAI message for ${displayName}`
+}
+
 export function formatTelegramAgentEventMessage(delivery: TelegramEventDelivery) {
   const parsed = postriderMessageReceivedSchema.safeParse(delivery.event.payload)
 
@@ -35,20 +48,14 @@ export function formatTelegramAgentEventMessage(delivery: TelegramEventDelivery)
 
   const payload = parsed.data
   const subject = payload.message.subject ?? "(no subject)"
-  const detectedType = payload.message.detected_type ?? "unknown"
-  const targetAgent = delivery.event.targetAgent ?? payload.inbox.name ?? payload.inbox.address
 
   return [
-    `New PostRiderAI message for ${targetAgent}`,
+    formatAgentAnnouncement(delivery.event.targetAgent),
     "",
-    `Inbox: ${payload.inbox.name} <${payload.inbox.address}>`,
-    `From: ${formatSender(payload)}`,
-    `Subject: ${subject}`,
-    `Type: ${detectedType}`,
-    `Codes detected: ${payload.message.codes.length}`,
-    `Links detected: ${payload.message.links.length}`,
     `Message ID: ${payload.message.message_id}`,
-    `Event ID: ${payload.event_id}`,
+    `Subject: ${subject}`,
+    `From: ${formatSender(payload)}`,
+    "Action: Fetch and process this email.",
   ].join("\n")
 }
 

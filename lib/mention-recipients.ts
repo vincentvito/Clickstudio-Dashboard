@@ -40,10 +40,7 @@ export async function resolveMentionRecipients(
     ...(opts.projectId && {
       AND: [
         {
-          OR: [
-            { projectIds: { isEmpty: true } },
-            { projectIds: { has: opts.projectId } },
-          ],
+          OR: [{ projectIds: { isEmpty: true } }, { projectIds: { has: opts.projectId } }],
         },
       ],
     }),

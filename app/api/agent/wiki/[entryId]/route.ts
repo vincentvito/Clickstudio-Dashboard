@@ -2,11 +2,7 @@ import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
 import { requireAgent, isAgentResponse } from "@/lib/agent-auth"
 import { detectUnknownFields, unknownFieldWarnings } from "@/lib/agent-fields"
-import {
-  normalizeWikiPatch,
-  readWikiBody,
-  wikiAuthorSelect,
-} from "@/lib/wiki-validation"
+import { normalizeWikiPatch, readWikiBody, wikiAuthorSelect } from "@/lib/wiki-validation"
 
 const WIKI_UPDATE_FIELDS = ["title", "links", "content", "tags"] as const
 
@@ -32,10 +28,7 @@ function serialize(entry: {
   }
 }
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ entryId: string }> },
-) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ entryId: string }> }) {
   const ctx = await requireAgent(req, "wiki:read")
   if (isAgentResponse(ctx)) return ctx
 

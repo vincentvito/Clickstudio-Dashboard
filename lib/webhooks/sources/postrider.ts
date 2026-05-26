@@ -114,9 +114,9 @@ export const postriderWebhookSource: WebhookSourceDefinition = {
         targetAgent: getPostriderTargetAgent(data),
         displayTitle: data.message.subject ?? "(no subject)",
         payload: data,
-        status: "pending",
+        status: "open",
         shouldRoute: true,
-        responseStatus: "pending",
+        responseStatus: "open",
       },
     }
   },

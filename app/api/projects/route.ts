@@ -11,7 +11,9 @@ export async function GET() {
     where: { organizationId: org.organizationId },
     include: {
       tasks: {
-        include: { assignees: { select: { id: true, name: true, email: true, image: true, isAgent: true } } },
+        include: {
+          assignees: { select: { id: true, name: true, email: true, image: true, isAgent: true } },
+        },
       },
       logs: { orderBy: { createdAt: "desc" }, take: 1 },
       user: { select: { id: true, name: true, email: true, image: true, isAgent: true } },

@@ -27,12 +27,7 @@ type RecState = "idle" | "recording" | "ready"
 
 function pickMimeType(): string | undefined {
   if (typeof MediaRecorder === "undefined") return undefined
-  const candidates = [
-    "audio/webm;codecs=opus",
-    "audio/webm",
-    "audio/ogg;codecs=opus",
-    "audio/mp4",
-  ]
+  const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"]
   return candidates.find((t) => MediaRecorder.isTypeSupported(t))
 }
 
@@ -127,7 +122,9 @@ export function IdeaCaptureDialog({ open, onOpenChange }: IdeaCaptureDialogProps
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
       const mimeType = pickMimeType()
-      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream)
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream)
       recorderRef.current = recorder
       chunksRef.current = []
 
@@ -209,7 +206,8 @@ export function IdeaCaptureDialog({ open, onOpenChange }: IdeaCaptureDialogProps
         <DialogHeader>
           <DialogTitle>Drop an idea</DialogTitle>
           <DialogDescription>
-            Type it out or record it — we&apos;ll shape it into a clean draft you can promote to a project.
+            Type it out or record it — we&apos;ll shape it into a clean draft you can promote to a
+            project.
           </DialogDescription>
         </DialogHeader>
 
@@ -249,10 +247,10 @@ export function IdeaCaptureDialog({ open, onOpenChange }: IdeaCaptureDialogProps
                 disabled={submitting || recState === "ready"}
                 aria-label={recState === "recording" ? "Stop recording" : "Start recording"}
                 className={cn(
-                  "relative grid size-20 place-items-center rounded-full text-white transition-colors focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50",
+                  "focus-visible:ring-ring relative grid size-20 place-items-center rounded-full text-white transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50",
                   recState === "ready"
                     ? "bg-muted text-muted-foreground"
-                    : "bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/30",
+                    : "bg-red-500 shadow-lg shadow-red-500/30 hover:bg-red-600",
                 )}
               >
                 {recState === "recording" && (

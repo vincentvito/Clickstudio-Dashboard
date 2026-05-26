@@ -16,7 +16,7 @@ export interface NormalizedWebhookEvent {
   targetAgent?: string | null
   displayTitle: string
   payload: unknown
-  status: "pending" | "ignored"
+  status: "open" | "ignored"
   handledAt?: Date | null
   shouldRoute: boolean
   responseStatus: string

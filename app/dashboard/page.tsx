@@ -78,75 +78,75 @@ export default function DashboardPage() {
 
   return (
     <ViewTransition {...PAGE_VT_PROPS}>
-    <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
-      {/* Header */}
-      <div className="mb-5 flex items-center justify-between">
-        <h1 className="text-foreground text-lg font-bold tracking-tight">Projects</h1>
-        <Button size="sm" className="gap-1.5" onClick={() => setDialogOpen(true)}>
-          <Plus className="size-3.5" />
-          New project
-        </Button>
-      </div>
-
-      {/* Idea bucket */}
-      <IdeasLane />
-
-      {/* Stats */}
-      <ProjectStatsStrip />
-
-      {/* Filters */}
-      <div className="mb-5 flex flex-wrap gap-1">
-        {(["All", ...PROJECT_STATES] as const).map((s) => {
-          const isActive = filter === s
-          const config = s !== "All" ? PROJECT_STATE_CONFIG[s] : null
-
-          return (
-            <button
-              key={s}
-              onClick={() => setFilter(s)}
-              className={cn(
-                "focus-visible:ring-ring rounded-md px-2.5 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
-                isActive
-                  ? config
-                    ? cn(config.bg, config.color)
-                    : "bg-accent text-foreground"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {s}
-              {s !== "All" && (
-                <span className="ml-1 tabular-nums opacity-50">
-                  {projects.filter((p) => p.state === s).length}
-                </span>
-              )}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* List */}
-      {sorted.length === 0 ? (
-        <p className="text-muted-foreground py-20 text-center text-sm">
-          {filter === "All"
-            ? "No projects yet — create one to get started"
-            : `No ${filter.toLowerCase()} projects`}
-        </p>
-      ) : (
-        <div className="divide-border/40 divide-y">
-          {sorted.map((project) => (
-            <ViewTransition key={project.id}>
-              <ProjectCard
-                project={project}
-                tasks={project.tasks ?? []}
-                lastActivity={latestLogByProject.get(project.id) ?? project.createdAt}
-              />
-            </ViewTransition>
-          ))}
+      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
+        {/* Header */}
+        <div className="mb-5 flex items-center justify-between">
+          <h1 className="text-foreground text-lg font-bold tracking-tight">Projects</h1>
+          <Button size="sm" className="gap-1.5" onClick={() => setDialogOpen(true)}>
+            <Plus className="size-3.5" />
+            New project
+          </Button>
         </div>
-      )}
 
-      <ProjectFormDialog open={dialogOpen} onOpenChange={setDialogOpen} onSubmit={handleSubmit} />
-    </div>
+        {/* Idea bucket */}
+        <IdeasLane />
+
+        {/* Stats */}
+        <ProjectStatsStrip />
+
+        {/* Filters */}
+        <div className="mb-5 flex flex-wrap gap-1">
+          {(["All", ...PROJECT_STATES] as const).map((s) => {
+            const isActive = filter === s
+            const config = s !== "All" ? PROJECT_STATE_CONFIG[s] : null
+
+            return (
+              <button
+                key={s}
+                onClick={() => setFilter(s)}
+                className={cn(
+                  "focus-visible:ring-ring rounded-md px-2.5 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                  isActive
+                    ? config
+                      ? cn(config.bg, config.color)
+                      : "bg-accent text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {s}
+                {s !== "All" && (
+                  <span className="ml-1 tabular-nums opacity-50">
+                    {projects.filter((p) => p.state === s).length}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* List */}
+        {sorted.length === 0 ? (
+          <p className="text-muted-foreground py-20 text-center text-sm">
+            {filter === "All"
+              ? "No projects yet — create one to get started"
+              : `No ${filter.toLowerCase()} projects`}
+          </p>
+        ) : (
+          <div className="divide-border/40 divide-y">
+            {sorted.map((project) => (
+              <ViewTransition key={project.id}>
+                <ProjectCard
+                  project={project}
+                  tasks={project.tasks ?? []}
+                  lastActivity={latestLogByProject.get(project.id) ?? project.createdAt}
+                />
+              </ViewTransition>
+            ))}
+          </div>
+        )}
+
+        <ProjectFormDialog open={dialogOpen} onOpenChange={setDialogOpen} onSubmit={handleSubmit} />
+      </div>
     </ViewTransition>
   )
 }

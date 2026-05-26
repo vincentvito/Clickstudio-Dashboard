@@ -29,12 +29,7 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { ConfirmDialog } from "@/components/dashboard/confirm-dialog"
-import {
-  createWikiEntry,
-  deleteWikiEntry,
-  updateWikiEntry,
-  useWikiEntries,
-} from "@/lib/store"
+import { createWikiEntry, deleteWikiEntry, updateWikiEntry, useWikiEntries } from "@/lib/store"
 import { relativeTime } from "@/lib/format"
 import { displayName } from "@/lib/user-display"
 import type { WikiEntry } from "@/lib/types"
@@ -190,7 +185,9 @@ export default function WikiPage() {
             <CardTitle className="text-base">
               {editingId ? "Edit wiki entry" : "Add wiki entry"}
             </CardTitle>
-            <CardDescription>Paste one link or many. Notes and tags stay searchable.</CardDescription>
+            <CardDescription>
+              Paste one link or many. Notes and tags stay searchable.
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 px-4 sm:px-5">
             <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
@@ -344,7 +341,7 @@ function WikiEntryCard({
         )}
 
         {entry.content && (
-          <p className="text-muted-foreground whitespace-pre-wrap text-sm leading-relaxed">
+          <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
             {entry.content}
           </p>
         )}

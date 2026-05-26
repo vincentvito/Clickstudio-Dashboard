@@ -1,11 +1,6 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
-import {
-  requireAgent,
-  isAgentResponse,
-  canAccessProject,
-  hasScope,
-} from "@/lib/agent-auth"
+import { requireAgent, isAgentResponse, canAccessProject, hasScope } from "@/lib/agent-auth"
 import { stateToPrisma, stateFromPrisma } from "@/lib/enum-map"
 import { detectUnknownFields, unknownFieldWarnings } from "@/lib/agent-fields"
 
@@ -22,7 +17,10 @@ export async function GET(
 
   const { projectId } = await params
   if (!canAccessProject(ctx, projectId)) {
-    return Response.json({ error: "Forbidden", hint: "Project not in token scope" }, { status: 403 })
+    return Response.json(
+      { error: "Forbidden", hint: "Project not in token scope" },
+      { status: 403 },
+    )
   }
 
   const project = await prisma.project.findFirst({
@@ -75,7 +73,10 @@ export async function PATCH(
 
   const { projectId } = await params
   if (!canAccessProject(ctx, projectId)) {
-    return Response.json({ error: "Forbidden", hint: "Project not in token scope" }, { status: 403 })
+    return Response.json(
+      { error: "Forbidden", hint: "Project not in token scope" },
+      { status: 403 },
+    )
   }
 
   const project = await prisma.project.findFirst({
@@ -87,8 +88,7 @@ export async function PATCH(
 
   const body = await req.json().catch(() => ({}))
   const unknownFields = detectUnknownFields(body, PROJECT_UPDATE_FIELDS)
-  const nextState =
-    body.state !== undefined ? (stateToPrisma(body.state) as never) : undefined
+  const nextState = body.state !== undefined ? (stateToPrisma(body.state) as never) : undefined
   const stateChanged = nextState !== undefined && nextState !== project.state
 
   const updated = await prisma.$transaction(async (tx) => {

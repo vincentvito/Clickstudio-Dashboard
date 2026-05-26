@@ -41,15 +41,15 @@ export function ProjectStatsStrip() {
             key={item.label}
             className={cn(
               "border-border/40 bg-card/40 flex h-[88px] flex-col justify-between rounded-lg border p-3 sm:h-24 sm:p-4",
-              "transition-colors hover:border-border/80",
+              "hover:border-border/80 transition-colors",
             )}
           >
-            <div className="text-muted-foreground/80 text-[10px] font-medium uppercase leading-tight tracking-wider sm:text-[11px]">
+            <div className="text-muted-foreground/80 text-[10px] leading-tight font-medium tracking-wider uppercase sm:text-[11px]">
               {item.label}
             </div>
             <div
               className={cn(
-                "text-foreground text-2xl font-bold leading-none tabular-nums sm:text-3xl",
+                "text-foreground text-2xl leading-none font-bold tabular-nums sm:text-3xl",
                 empty && "text-muted-foreground/40 text-xl sm:text-2xl",
               )}
             >

@@ -32,10 +32,7 @@ export async function GET(req: NextRequest) {
         ...(projectId && {
           AND: [
             {
-              OR: [
-                { projectIds: { isEmpty: true } },
-                { projectIds: { has: projectId } },
-              ],
+              OR: [{ projectIds: { isEmpty: true } }, { projectIds: { has: projectId } }],
             },
           ],
         }),

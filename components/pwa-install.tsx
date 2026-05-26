@@ -94,9 +94,7 @@ export function PwaInstall() {
       <BannerShell onDismiss={handleDismiss}>
         <div className="flex-1 text-sm">
           <p className="text-foreground font-medium">Install Click Studio</p>
-          <p className="text-muted-foreground text-xs">
-            Get a one-tap home-screen launcher.
-          </p>
+          <p className="text-muted-foreground text-xs">Get a one-tap home-screen launcher.</p>
         </div>
         <Button size="sm" onClick={handleInstall} className="gap-1.5">
           <Download className="size-3.5" />
