@@ -21,6 +21,7 @@
 - Moved event summary text into source normalization and added parser failure reasons so the generic Webhooks UI no longer reads PostRider-shaped payload fields directly.
 - Added private agent event inbox endpoints under `/api/agent/events` so agents can poll Control Center outbound, atomically claim the oldest open event with `/api/agent/events/next`, inspect assigned webhook events, and mark them acked/failed without exposing an inbound agent endpoint.
 - Added explicit `events:read` and `events:write` agent token scopes for the private event inbox so polling credentials can be audited and rotated with least-privilege intent.
+- Fixed webhook event assignment so agent inbox routes determine `AgentEvent.targetAgent` ahead of notification-only Telegram routing, allowing `ccctl events` pollers to see events assigned to their token identity.
 - Fixed the agent-event `next` endpoint to return a bodyless 204 when no events are available, and made Telegram agent announcements use the configured target agent instead of hardcoding Rolino.
 - Tracked the follow-up need for an agent-event claim lease/visibility timeout so crashed pollers cannot leave claimed events stuck in `processing`.
 - Moved webhook event display titles into a first-class `AgentEvent.displayTitle` column so provider payloads remain unmodified.

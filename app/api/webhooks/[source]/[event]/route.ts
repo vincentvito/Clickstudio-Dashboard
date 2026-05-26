@@ -1,6 +1,7 @@
 import { after, type NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
 import { routeAgentEvent } from "@/lib/agent-events/route-agent-event"
+import { getRoutedTargetAgent } from "@/lib/agent-events/routing"
 import { findVerifiedWebhookEndpoint } from "@/lib/webhooks/endpoint-resolution"
 import { isWebhookSignatureFormatValid, isWebhookTimestampFresh } from "@/lib/webhooks/signature"
 import { getWebhookSourceDefinition } from "@/lib/webhooks/sources"
@@ -214,10 +215,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
           organizationId: endpoint.organizationId,
           source: sourceDefinition.source,
           eventType: normalizedEvent.eventType,
-          targetAgent:
-            routingRules.find((rule) => rule.targetAgent)?.targetAgent ??
-            normalizedEvent.targetAgent ??
-            null,
+          targetAgent: getRoutedTargetAgent(routingRules) ?? normalizedEvent.targetAgent ?? null,
           externalId: normalizedEvent.externalId,
           providerMessageId: normalizedEvent.providerMessageId ?? null,
           displayTitle: normalizedEvent.displayTitle,
