@@ -15,6 +15,8 @@ export type AgentScope =
   | "notes:write"
   | "wiki:read"
   | "wiki:write"
+  | "events:read"
+  | "events:write"
 
 export const ALL_SCOPES: AgentScope[] = [
   "org:read",
@@ -29,6 +31,8 @@ export const ALL_SCOPES: AgentScope[] = [
   "notes:write",
   "wiki:read",
   "wiki:write",
+  "events:read",
+  "events:write",
 ]
 
 // Scopes that operate on org-level resources and ignore the per-token
@@ -41,6 +45,8 @@ export const ORG_WIDE_SCOPES: AgentScope[] = [
   "ideas:write",
   "wiki:read",
   "wiki:write",
+  "events:read",
+  "events:write",
 ]
 
 export function isOrgWideScope(scope: string): boolean {

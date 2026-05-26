@@ -33,6 +33,8 @@ const ALL_SCOPES = [
   { id: "ideas:write", label: "Write ideas", orgWide: true },
   { id: "wiki:read", label: "Read wiki", orgWide: true },
   { id: "wiki:write", label: "Write wiki", orgWide: true },
+  { id: "events:read", label: "Read events", orgWide: true },
+  { id: "events:write", label: "Write events", orgWide: true },
 ] as const
 
 type AgentTokenRow = {

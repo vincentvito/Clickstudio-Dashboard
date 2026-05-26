@@ -1,17 +1,10 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
-import { resolveAgentContext } from "@/lib/agent-auth"
+import { isAgentResponse, requireAgent } from "@/lib/agent-auth"
 import { agentEventAccessWhere, serializeAgentEvent } from "@/lib/agent-events/api"
 
 interface RouteContext {
   params: Promise<{ eventId: string }>
-}
-
-function unauthorized() {
-  return Response.json(
-    { error: "Unauthorized", hint: "Provide Authorization: Bearer ccs_..." },
-    { status: 401 },
-  )
 }
 
 function normalizePatchStatus(status: string | undefined) {
@@ -28,8 +21,8 @@ function deliveryStatusForEventStatus(status: string) {
 }
 
 export async function GET(req: NextRequest, context: RouteContext) {
-  const ctx = await resolveAgentContext(req)
-  if (!ctx) return unauthorized()
+  const ctx = await requireAgent(req, "events:read")
+  if (isAgentResponse(ctx)) return ctx
 
   const { eventId } = await context.params
   const event = await prisma.agentEvent.findFirst({
@@ -52,8 +45,8 @@ export async function GET(req: NextRequest, context: RouteContext) {
 }
 
 export async function PATCH(req: NextRequest, context: RouteContext) {
-  const ctx = await resolveAgentContext(req)
-  if (!ctx) return unauthorized()
+  const ctx = await requireAgent(req, "events:write")
+  if (isAgentResponse(ctx)) return ctx
 
   const { eventId } = await context.params
   const body = (await req.json().catch(() => ({}))) as {

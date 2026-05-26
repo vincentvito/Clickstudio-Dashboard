@@ -1,22 +1,15 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
-import { resolveAgentContext } from "@/lib/agent-auth"
+import { isAgentResponse, requireAgent } from "@/lib/agent-auth"
 import {
   agentEventAccessWhere,
   OPEN_AGENT_EVENT_STATUSES,
   serializeAgentEvent,
 } from "@/lib/agent-events/api"
 
-function unauthorized() {
-  return Response.json(
-    { error: "Unauthorized", hint: "Provide Authorization: Bearer ccs_..." },
-    { status: 401 },
-  )
-}
-
 export async function POST(req: NextRequest) {
-  const ctx = await resolveAgentContext(req)
-  if (!ctx) return unauthorized()
+  const ctx = await requireAgent(req, "events:write")
+  if (isAgentResponse(ctx)) return ctx
 
   const url = new URL(req.url)
   const body = (await req.json().catch(() => ({}))) as {

@@ -1,18 +1,11 @@
 import { NextRequest } from "next/server"
 import prisma from "@/lib/prisma"
-import { resolveAgentContext } from "@/lib/agent-auth"
+import { isAgentResponse, requireAgent } from "@/lib/agent-auth"
 import {
   agentEventAccessWhere,
   OPEN_AGENT_EVENT_STATUSES,
   serializeAgentEvent,
 } from "@/lib/agent-events/api"
-
-function unauthorized() {
-  return Response.json(
-    { error: "Unauthorized", hint: "Provide Authorization: Bearer ccs_..." },
-    { status: 401 },
-  )
-}
 
 function parseLimit(value: string | null) {
   return Math.min(Math.max(parseInt(value ?? "25", 10) || 25, 1), 100)
@@ -26,8 +19,8 @@ function getStatusFilter(status: string) {
 }
 
 export async function GET(req: NextRequest) {
-  const ctx = await resolveAgentContext(req)
-  if (!ctx) return unauthorized()
+  const ctx = await requireAgent(req, "events:read")
+  if (isAgentResponse(ctx)) return ctx
 
   const url = new URL(req.url)
   const source = url.searchParams.get("source")
