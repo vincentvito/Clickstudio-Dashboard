@@ -151,27 +151,28 @@ export function WebhooksClient({
   const [selectedEvent, setSelectedEvent] = useState<EventView | null>(
     events.find((event) => event.id === initialSelectedEventId) ?? null,
   )
+  const [activeTab, setActiveTab] = useState("endpoints")
 
   // Poll for new webhook events so the list stays current without a manual refresh.
   // router.refresh() re-runs the page's server query; fresh `events` flow back down as props.
-  // Only polls while the tab is focused to avoid background work.
+  // Only runs while the Events tab is open and the browser tab is focused, to avoid wasted
+  // server invocations / DB queries. Refreshes immediately on entering the tab or regaining focus.
   useEffect(() => {
-    const id = setInterval(() => {
-      if (document.visibilityState === "visible") {
-        router.refresh()
-      }
-    }, 7000)
-    const onVisible = () => {
+    if (activeTab !== "events") return
+
+    const refresh = () => {
       if (document.visibilityState === "visible") {
         router.refresh()
       }
     }
-    document.addEventListener("visibilitychange", onVisible)
+    refresh()
+    const id = setInterval(refresh, 30000)
+    document.addEventListener("visibilitychange", refresh)
     return () => {
       clearInterval(id)
-      document.removeEventListener("visibilitychange", onVisible)
+      document.removeEventListener("visibilitychange", refresh)
     }
-  }, [router])
+  }, [activeTab, router])
 
   const endpointUrl = endpoint
     ? `${webhookUrl.split("?")[0]}?endpoint=${encodeURIComponent(endpoint.id)}`
@@ -385,7 +386,7 @@ export function WebhooksClient({
         </p>
       </div>
 
-      <Tabs defaultValue="endpoints" className="gap-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4">
         <TabsList>
           <TabsTrigger value="endpoints">Endpoints</TabsTrigger>
           <TabsTrigger value="routing">Routing</TabsTrigger>
