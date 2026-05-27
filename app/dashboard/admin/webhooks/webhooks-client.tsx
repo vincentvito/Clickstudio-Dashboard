@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -151,6 +151,27 @@ export function WebhooksClient({
   const [selectedEvent, setSelectedEvent] = useState<EventView | null>(
     events.find((event) => event.id === initialSelectedEventId) ?? null,
   )
+
+  // Poll for new webhook events so the list stays current without a manual refresh.
+  // router.refresh() re-runs the page's server query; fresh `events` flow back down as props.
+  // Only polls while the tab is focused to avoid background work.
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        router.refresh()
+      }
+    }, 7000)
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        router.refresh()
+      }
+    }
+    document.addEventListener("visibilitychange", onVisible)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener("visibilitychange", onVisible)
+    }
+  }, [router])
 
   const endpointUrl = endpoint
     ? `${webhookUrl.split("?")[0]}?endpoint=${encodeURIComponent(endpoint.id)}`

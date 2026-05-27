@@ -23,6 +23,7 @@
 - Added explicit `events:read` and `events:write` agent token scopes for the private event inbox so polling credentials can be audited and rotated with least-privilege intent.
 - Fixed webhook event assignment so agent inbox routes determine `AgentEvent.targetAgent` ahead of notification-only Telegram routing, allowing `ccctl events` pollers to see events assigned to their token identity.
 - Updated PostRider webhook validation for the current minimal metadata-only `2026-05-01` payload shape with `schema_version`, `message.id`, sender objects, `codes_count`, `links_count`, and `received_at`; inbox and subject metadata are accepted when present but no longer required.
+- Auto-refreshed the admin Webhooks events list via a visibility-aware 7s `router.refresh()` poll (plus an immediate refresh when the tab regains focus) so new webhook events appear without a manual page refresh.
 - Fixed the agent-event `next` endpoint to return a bodyless 204 when no events are available, and made Telegram agent announcements use the configured target agent instead of hardcoding Rolino.
 - Tracked the follow-up need for an agent-event claim lease/visibility timeout so crashed pollers cannot leave claimed events stuck in `processing`.
 - Moved webhook event display titles into a first-class `AgentEvent.displayTitle` column so provider payloads remain unmodified.
