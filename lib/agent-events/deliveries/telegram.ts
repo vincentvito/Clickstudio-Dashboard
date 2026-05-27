@@ -1,4 +1,6 @@
 import {
+  getPostriderMessageId,
+  getPostriderSender,
   postriderMessageReceivedSchema,
   type PostriderMessageReceivedPayload,
 } from "@/lib/webhooks/sources/postrider"
@@ -16,9 +18,8 @@ interface TelegramEventDelivery {
 }
 
 function formatSender(payload: PostriderMessageReceivedPayload) {
-  return payload.message.from_name
-    ? `${payload.message.from_name} <${payload.message.from}>`
-    : payload.message.from
+  const sender = getPostriderSender(payload)
+  return sender.name ? `${sender.name} <${sender.email}>` : sender.email
 }
 
 function formatAgentAnnouncement(agentName: string | null) {
@@ -52,7 +53,7 @@ export function formatTelegramAgentEventMessage(delivery: TelegramEventDelivery)
   return [
     formatAgentAnnouncement(delivery.event.targetAgent),
     "",
-    `Message ID: ${payload.message.message_id}`,
+    `Message ID: ${getPostriderMessageId(payload)}`,
     `Subject: ${subject}`,
     `From: ${formatSender(payload)}`,
     "Action: Fetch and process this email.",

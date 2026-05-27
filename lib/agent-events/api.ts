@@ -38,12 +38,21 @@ export function getAgentEventSummary(event: {
   const message = getMessageObject(event.payload)
 
   return {
-    messageId: event.providerMessageId ?? (message?.message_id as string | undefined) ?? null,
+    messageId: event.providerMessageId ?? (message?.id as string | undefined) ?? null,
     subject:
       event.displayTitle ?? (typeof message?.subject === "string" ? message.subject : null) ?? null,
-    from: typeof message?.from === "string" ? message.from : null,
-    fromName: typeof message?.from_name === "string" ? message.from_name : null,
-    receivedAt: typeof message?.timestamp === "string" ? message.timestamp : null,
+    from:
+      typeof (message?.from as Record<string, unknown> | undefined)?.email === "string"
+        ? ((message?.from as Record<string, unknown>).email as string)
+        : null,
+    fromName:
+      typeof (message?.from as Record<string, unknown> | undefined)?.name === "string"
+        ? ((message?.from as Record<string, unknown>).name as string)
+        : null,
+    receivedAt:
+      typeof message?.received_at === "string"
+        ? message.received_at
+        : null,
   }
 }
 

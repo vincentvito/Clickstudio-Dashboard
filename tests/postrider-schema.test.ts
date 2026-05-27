@@ -7,25 +7,20 @@ import {
 } from "@/lib/webhooks/sources/postrider"
 
 const validPayload = {
-  type: "event",
+  schema_version: "2026-05-01",
   event_type: "message.received",
   event_id: "evt_abc123",
   message: {
-    inbox_id: "inbox_123",
-    message_id: "msg_123",
-    timestamp: "2026-05-25T12:00:00.000Z",
-    from: "noreply@example.com",
-    from_name: "Example",
-    to: ["agent@postriderai.com"],
-    subject: "Your code",
+    id: "msg_123",
+    rfc_message_id: "<abc@example.com>",
+    from: {
+      email: "noreply@example.com",
+      name: "Example",
+    },
     detected_type: "verification",
-    codes: ["123456"],
-    links: [],
-  },
-  inbox: {
-    id: "inbox_123",
-    address: "agent@postriderai.com",
-    name: "GitHub agent",
+    codes_count: 1,
+    links_count: 0,
+    received_at: "2026-05-25T12:00:00.000Z",
   },
 }
 
@@ -39,7 +34,10 @@ test("invalid PostRiderAI payloads fail before storage or routing", () => {
     ...validPayload,
     message: {
       ...validPayload.message,
-      from: "not-an-email",
+      from: {
+        email: "not-an-email",
+        name: "Example",
+      },
     },
   }
 
@@ -48,7 +46,7 @@ test("invalid PostRiderAI payloads fail before storage or routing", () => {
 
 test("PostRiderAI webhook.test payloads pass union validation", () => {
   const testPayload = {
-    type: "event",
+    schema_version: "2026-05-01",
     event_type: POSTRIDER_WEBHOOK_TEST_EVENT_TYPE,
     event_id: "evt_test_abc123",
     inbox: {

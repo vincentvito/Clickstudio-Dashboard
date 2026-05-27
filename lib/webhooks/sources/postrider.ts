@@ -25,34 +25,31 @@ const postriderInboxSchema = z.object({
 })
 
 export const postriderMessageReceivedSchema = z.object({
-  type: z.literal("event"),
+  schema_version: z.string(),
   event_type: z.literal(POSTRIDER_MESSAGE_RECEIVED_EVENT_TYPE),
   event_id: z.string(),
   message: z.object({
-    inbox_id: z.string(),
-    message_id: z.string(),
-    timestamp: z.string().datetime(),
-    from: z.string().email(),
-    from_name: z.string().nullable().optional(),
-    to: z.array(z.string().email()),
-    subject: z.string().nullable(),
+    id: z.string(),
+    inbox_id: z.string().optional(),
+    rfc_message_id: z.string().nullable().optional(),
+    from: z.object({
+      email: z.string().email(),
+      name: z.string().nullable().optional(),
+    }),
+    subject: z.string().nullable().optional(),
     detected_type: z.string().nullable().optional(),
-    codes: z.array(z.string()),
-    links: z.array(
-      z.object({
-        label: z.string().nullable().optional(),
-        url: z.string().url(),
-      }),
-    ),
+    codes_count: z.number().int().nonnegative(),
+    links_count: z.number().int().nonnegative(),
+    received_at: z.string().datetime(),
   }),
-  inbox: postriderInboxSchema,
+  inbox: postriderInboxSchema.optional(),
 })
 
 export const postriderWebhookTestSchema = z.object({
-  type: z.literal("event"),
+  schema_version: z.string(),
   event_type: z.literal(POSTRIDER_WEBHOOK_TEST_EVENT_TYPE),
   event_id: z.string(),
-  inbox: postriderInboxSchema,
+  inbox: postriderInboxSchema.optional(),
   test: z.literal(true),
 })
 
@@ -65,7 +62,30 @@ export type PostriderMessageReceivedPayload = z.infer<typeof postriderMessageRec
 export type PostriderWebhookEventPayload = z.infer<typeof postriderWebhookEventSchema>
 
 export function getPostriderTargetAgent(payload: PostriderMessageReceivedPayload) {
-  return payload.inbox.name || payload.inbox.address
+  return payload.inbox?.name || payload.inbox?.address || null
+}
+
+export function getPostriderMessageId(payload: PostriderMessageReceivedPayload) {
+  return payload.message.id
+}
+
+export function getPostriderSender(payload: PostriderMessageReceivedPayload) {
+  return {
+    email: payload.message.from.email,
+    name: payload.message.from.name ?? null,
+  }
+}
+
+export function getPostriderReceivedAt(payload: PostriderMessageReceivedPayload) {
+  return payload.message.received_at
+}
+
+export function getPostriderCodesCount(payload: PostriderMessageReceivedPayload) {
+  return payload.message.codes_count
+}
+
+export function getPostriderLinksCount(payload: PostriderMessageReceivedPayload) {
+  return payload.message.links_count
 }
 
 export function parsePostriderMessageReceived(payload: unknown) {
@@ -94,7 +114,7 @@ export const postriderWebhookSource: WebhookSourceDefinition = {
         data: {
           eventType: data.event_type,
           externalId: data.event_id,
-          targetAgent: data.inbox.name || data.inbox.address,
+          targetAgent: data.inbox?.name || data.inbox?.address || null,
           displayTitle: "Webhook test",
           payload: data,
           status: "ignored",
@@ -110,7 +130,7 @@ export const postriderWebhookSource: WebhookSourceDefinition = {
       data: {
         eventType: data.event_type,
         externalId: data.event_id,
-        providerMessageId: data.message.message_id,
+        providerMessageId: getPostriderMessageId(data),
         targetAgent: getPostriderTargetAgent(data),
         displayTitle: data.message.subject ?? "(no subject)",
         payload: data,
